@@ -4,6 +4,10 @@ import com.akifox.asynchttp.HttpRequest;
 import com.akifox.asynchttp.HttpResponse;
 import haxe.Timer;
 import haxe.io.Bytes;
+import haxe.macro.Expr.Error;
+import no.logic.uix.utils.ObjUtils;
+import no.logic.uix.utils.ObjUtils;
+import sys.io.File;
 import sys.io.Process;
 import sys.net.Address;
 import sys.net.Host;
@@ -14,12 +18,6 @@ import sys.net.UdpSocket;
  * @author Tommy S.
  */
 
-typedef TargetMachineInfo = 
-{
-	var ip		: String;
-	var mac		: String;
-}
- 
 class KontentumNC 
 {
 	//===================================================================================
@@ -29,10 +27,16 @@ class KontentumNC
 	var kontentumLink		: String				= "https://kontentum.link";
 	var restPingRelay		: String				= "/rest/pingRelay/";
 	var apiKey				: String				= "0c8238b9c3349ec6d8dbd4b25939d705";
+	
+	/////////////////////////////////////////////////////////////////////////////////////
+
+	var httpPingRequest		: HttpRequest;
 	var udpSocket			: UdpSocket;
-	var b					: Bytes;
+	var magicPacket			: Bytes;
 	var address				: Address;
-	var tm					: TargetMachineInfo;
+	var pingTimer			: Timer;
+
+	var settings			: Dynamic;
 
 	/////////////////////////////////////////////////////////////////////////////////////
 
@@ -42,34 +46,27 @@ class KontentumNC
 	
 	public function new()
 	{
-		tm =
-		{
-			ip	: "192.168.1.10", 
-			mac	: "98-F2-B3-E7-CC-1E"
-		};
-		
-		//var tm:TargetMachine = { ip:"127.0.0.1", mac:"08-6A-0A-83-FA-15" };
+		settings = loadSettings("config.xml");
+		if (settings == null)
+			exitWithError("Error! Malformed XML");
+			
 		udpSocket = new UdpSocket();
-		var clientHost:Host = new Host(Host.localhost());
+	
+		httpPingRequest = new HttpRequest( { url:kontentumLink+restPingRelay+apiKey, callback:onHttpResponse });		
 		
-		address= new Address();
-		address.host = new Host(tm.ip).ip;
-		address.port = 9; //Hardcoded for WOL
-		b = createMagicPacket(tm.mac);
-		
-		var httpRequest = new HttpRequest( { url:kontentumLink+restPingRelay+apiKey, callback:onHttpResponse });		
-		
-		var t = new Timer(1000);
-		t.run = function ()
-		{
-			var h = httpRequest.clone();
-			h.send();
-		}
+		pingTimer = new Timer(1000);
+		pingTimer.run = onPing;
 	}
 	
+	function onPing() 
+	{
+		httpPingRequest.clone().send();
+	}
+	
+	/////////////////////////////////////////////////////////////////////////////////////
+
 	function onHttpResponse(response:HttpResponse)
 	{
-		//sendUDP();
 		if (response.isOK)
 		{
 			trace(response.content);
@@ -77,15 +74,42 @@ class KontentumNC
 				//onPingData(response);
 			//else
 				//onPingCorruptData(response);
+				
+			sendMagicPacket("127.0.0.1", "08:6A:0A:83:FA:15");
 		}
 		//else
 			//onPingError(response);
 	}  
 	
-	function sendUDP()
+	function sendMagicPacket(ip:String, macAdr:String)
 	{
-		udpSocket.sendTo(b, 0, b.length, address);	
-		trace("WOL packet sent to | " + tm.ip + " | " + tm.mac);
+		var packet:Bytes = createMagicPacket(macAdr);
+		
+		var adr = new Address();
+		adr.host = new Host(ip).ip;
+		adr.port = 9; //Hardcoded for WOL
+
+		udpSocket.sendTo(packet, 0, packet.length, adr);	
+		trace("WOL packet sent to " + ip + " : " + macAdr);
+	}
+
+	//===================================================================================
+	// Load settings 
+	//-----------------------------------------------------------------------------------
+
+	function loadSettings(configXml:String):Dynamic
+	{
+		var configFile = "";
+		try
+		{
+			configFile = File.getContent(configXml);
+		}
+		catch (e:Error)
+		{
+			exitWithError("Error: config.xml not found");
+		}
+		
+		return ObjUtils.fromXML(Xml.parse(configFile));
 	}
 	
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -118,6 +142,14 @@ class KontentumNC
 		}
 		
 		return mp;
+	}
+	
+	/////////////////////////////////////////////////////////////////////////////////////
+	
+	function exitWithError(msg:String)
+	{
+		trace(msg);
+		Sys.exit(1);
 	}
 	
 	/////////////////////////////////////////////////////////////////////////////////////
