@@ -24,9 +24,9 @@ class KontentumNC
 	// Main 
 	//-----------------------------------------------------------------------------------
 	
-	var kontentumLink		: String				= "https://kontentum.link";
-	var restPingRelay		: String				= "/rest/pingRelay/";
-	var apiKey				: String				= "0c8238b9c3349ec6d8dbd4b25939d705";
+	var kontentumLink		: String				= "";
+	var restPingRelay		: String				= "";
+	var apiKey				: String				= "";
 	
 	/////////////////////////////////////////////////////////////////////////////////////
 
@@ -50,9 +50,13 @@ class KontentumNC
 		if (settings == null)
 			exitWithError("Error! Malformed XML");
 			
+		kontentumLink = settings.config.kontentum.ip;
+		restPingRelay = settings.config.kontentum.api;
+		apiKey = settings.config.kontentum.apiKey;
+			
 		udpSocket = new UdpSocket();
 	
-		httpPingRequest = new HttpRequest( { url:kontentumLink+restPingRelay+apiKey, callback:onHttpResponse });		
+		httpPingRequest = new HttpRequest( { url:kontentumLink+restPingRelay+"/"+apiKey, callback:onHttpResponse });		
 		
 		pingTimer = new Timer(1000);
 		pingTimer.run = onPing;
@@ -90,7 +94,7 @@ class KontentumNC
 		adr.port = 9; //Hardcoded for WOL
 
 		udpSocket.sendTo(packet, 0, packet.length, adr);	
-		trace("WOL packet sent to " + ip + " : " + macAdr);
+		trace("WOL packet sent to " + ip + " [" + macAdr + "]");
 	}
 
 	//===================================================================================
