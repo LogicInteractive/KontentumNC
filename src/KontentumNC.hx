@@ -101,8 +101,8 @@ class KontentumNC
 	{
 		if (response.isOK)
 		{
-			var response:Dynamic = response.toJson();
-			var newPingTime:Float = Std.parseFloat(response.ping);
+			var rsp:Dynamic = response.toJson();
+			var newPingTime:Float = Std.parseFloat(rsp.ping);
 			if (newPingTime > 0 && (newPingTime!=pingTime))
 			{
 				pingTime = newPingTime;
@@ -113,7 +113,7 @@ class KontentumNC
 				startPingTimer();
 			}
 				
-			processClientList(response.clients);
+			processClientList(rsp.clients);
 			//trace(response.content);
 			//if (response.content != null)
 				//onPingData(response);
