@@ -41,6 +41,7 @@ class KontentumNC
 	var kontentumLink		: String				= "";
 	var restPingRelay		: String				= "";
 	var apiKey				: String				= "";
+	var pingTime			: Float					= 1.0;
 	
 	/////////////////////////////////////////////////////////////////////////////////////
 
@@ -67,12 +68,13 @@ class KontentumNC
 		kontentumLink = settings.config.kontentum.ip;
 		restPingRelay = settings.config.kontentum.api;
 		apiKey = settings.config.kontentum.apiKey;
+		pingTime = settings.config.kontentum.ping;
 			
 		udpSocket = new UdpSocket();
 	
 		httpPingRequest = new HttpRequest( { url:kontentumLink+restPingRelay+"/"+apiKey, callback:onHttpResponse });		
 		
-		pingTimer = new Timer(1000);
+		pingTimer = new Timer(Std.int(pingTime*1000));
 		pingTimer.run = onPing;
 		onPing();
 	}
@@ -88,7 +90,12 @@ class KontentumNC
 	{
 		if (response.isOK)
 		{
-			processClientList(response.toJson().clients);
+			var response:Dynamic = response.toJson();
+			pingTime = Std.parseFloat(response.ping);
+			if (pingTime == 0)
+				pingTime = settings.config.kontentum.ping;
+				
+			processClientList(response.clients);
 			//trace(response.content);
 			//if (response.content != null)
 				//onPingData(response);
@@ -189,6 +196,7 @@ class KontentumNC
 			macAddrHex.push(Std.parseInt("0x"+macAddrSt[i]));
 		}
 		
+		//A magic packet is defined as : 6x0FF + 16xMAC
 		var mp = Bytes.alloc(102); // 6 + (16*6)
 		var ix:Int = 0;
 		for (hs in 0...6)
