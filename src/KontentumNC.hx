@@ -5,6 +5,7 @@ import com.akifox.asynchttp.HttpResponse;
 import haxe.Timer;
 import haxe.io.Bytes;
 import haxe.macro.Expr.Error;
+import no.logic.uix.utils.Convert;
 import no.logic.uix.utils.ObjUtils;
 import sys.io.File;
 import sys.io.Process;
@@ -51,6 +52,7 @@ class KontentumNC
 	var address				: Address;
 	var pingTimer			: Timer;
 
+	var debug				: Bool;
 	var settings			: Dynamic;
 
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -69,6 +71,8 @@ class KontentumNC
 		restPingRelay = settings.config.kontentum.api;
 		apiKey = settings.config.kontentum.apiKey;
 		pingTime = settings.config.kontentum.ping;
+		
+		debug = Convert.toBool(settings.config.debug);
 			
 		udpSocket = new UdpSocket();
 	
@@ -80,7 +84,8 @@ class KontentumNC
 	
 	function onPing() 
 	{
-		trace("Pinging server");
+		if (debug)
+			trace("Pinging server");
 		httpPingRequest.clone().send();
 	}
 	
@@ -109,7 +114,8 @@ class KontentumNC
 				if (pingTime == 0)
 					pingTime = settings.config.kontentum.ping;
 					
-				trace("Setting new ping time: " + newPingTime + " seconds.");
+				if (debug)
+					trace("Setting new ping time: " + newPingTime + " seconds.");
 				startPingTimer();
 			}
 				
@@ -151,9 +157,10 @@ class KontentumNC
 	function processClientList(clientArr:Array<Dynamic>) 
 	{
 		var pingClients:Array<ClientInfo> = [];
-		trace("Clients: ["+pingClients.length+"]");
+		if (debug)
+			trace("Clients: ["+clientArr.length+"]");
 		
-		if (pingClients.length == 0)
+		if (clientArr.length == 0)
 			return;
 			
 		for (i in 0...clientArr.length) 
@@ -202,7 +209,8 @@ class KontentumNC
 		adr.port = 9; //Hardcoded for WOL
 
 		udpSocket.sendTo(packet, 0, packet.length, adr);	
-		trace("WOL packet sent to " + ip + " [" + macAdr + "]");
+		if (debug)
+			trace("WOL packet sent to " + ip + " [" + macAdr + "]");
 	}
 	
 	function buildMagicPacket(macAddr:String):Bytes 

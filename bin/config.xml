@@ -5,4 +5,5 @@
 		<apiKey>0c8238b9c3349ec6d8dbd4b25939d705</apiKey> 
 		<ping>1.0</ping>
 	</kontentum>
+	<debug>true</debug>
 </config>
