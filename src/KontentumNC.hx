@@ -6,7 +6,6 @@ import haxe.Timer;
 import haxe.io.Bytes;
 import haxe.macro.Expr.Error;
 import no.logic.uix.utils.ObjUtils;
-import no.logic.uix.utils.ObjUtils;
 import sys.io.File;
 import sys.io.Process;
 import sys.net.Address;
