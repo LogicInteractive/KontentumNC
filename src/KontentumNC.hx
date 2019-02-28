@@ -18,6 +18,21 @@ import sys.net.UdpSocket;
  * @author Tommy S.
  */
 
+typedef ClientInfo =
+{
+	var id				: Int;
+	var app_id			: Int;
+	var exhibit_id		: Int;
+	var name			: String;
+	var hostname		: String;
+	var ip				: String;
+	var mac				: String;
+	var launch			: String;
+	var last_ping		: String;
+	var description		: String;
+	var callback		: String;
+}
+
 class KontentumNC 
 {
 	//===================================================================================
@@ -60,6 +75,7 @@ class KontentumNC
 		
 		pingTimer = new Timer(1000);
 		pingTimer.run = onPing;
+		onPing();
 	}
 	
 	function onPing() 
@@ -73,29 +89,19 @@ class KontentumNC
 	{
 		if (response.isOK)
 		{
-			trace(response.content);
+			processClientList(response.toJson().clients);
+			//trace(response.content);
 			//if (response.content != null)
 				//onPingData(response);
 			//else
 				//onPingCorruptData(response);
 				
-			sendMagicPacket("127.0.0.1", "08:6A:0A:83:FA:15");
+			//sendMagicPacket("127.0.0.1", "08:6A:0A:83:FA:15");
+			//sendMagicPacket("192.168.1.10", "98:f2:b3:e7:cc:1e");
 		}
 		//else
 			//onPingError(response);
 	}  
-	
-	function sendMagicPacket(ip:String, macAdr:String)
-	{
-		var packet:Bytes = createMagicPacket(macAdr);
-		
-		var adr = new Address();
-		adr.host = new Host(ip).ip;
-		adr.port = 9; //Hardcoded for WOL
-
-		udpSocket.sendTo(packet, 0, packet.length, adr);	
-		trace("WOL packet sent to " + ip + " [" + macAdr + "]");
-	}
 
 	//===================================================================================
 	// Load settings 
@@ -118,14 +124,66 @@ class KontentumNC
 	
 	/////////////////////////////////////////////////////////////////////////////////////
 	
-	function createMagicPacket(macAddr:String):Bytes 
+	function processClientList(clientArr:Array<Dynamic>) 
+	{
+		var pingClients:Array<ClientInfo> = [];
+		for (i in 0...clientArr.length) 
+		{
+			pingClients.push(
+			{
+				id				: clientArr[i].id,
+				app_id			: clientArr[i].app_id,
+				exhibit_id		: clientArr[i].exhibit_id,
+				name			: clientArr[i].name,
+				hostname		: clientArr[i].hostname,
+				ip				: clientArr[i].ip,
+				mac				: clientArr[i].mac.toUpperCase(),
+				launch			: clientArr[i].launch,
+				last_ping		: clientArr[i].last_ping,
+				description		: clientArr[i].description,
+				callback		: clientArr[i].callback
+			});
+		}	
+		
+		for (i in 0...pingClients.length) 
+		{
+			processClient(pingClients[i]);
+		}
+	}
+	
+	function processClient(ci:ClientInfo) 
+	{
+		switch (ci.callback) 
+		{
+			case "wakeup":
+			{
+				sendMagicPacket(ci.ip, ci.mac);
+			}
+		}
+	}
+	
+	/////////////////////////////////////////////////////////////////////////////////////
+	
+	function sendMagicPacket(ip:String, macAdr:String)
+	{
+		var packet:Bytes = buildMagicPacket(macAdr);
+		
+		var adr = new Address();
+		adr.host = new Host(ip).ip;
+		adr.port = 9; //Hardcoded for WOL
+
+		//udpSocket.sendTo(packet, 0, packet.length, adr);	
+		trace("WOL packet sent to " + ip + " [" + macAdr + "]");
+	}
+	
+	function buildMagicPacket(macAddr:String):Bytes 
 	{
 		if (macAddr == null)
 			return null;
 			
-		macAddr.split(":").join("-");
+		macAddr = macAddr.split("-").join(":");
 		
-		var macAddrSt:Array<String> = macAddr.split("-");
+		var macAddrSt:Array<String> = macAddr.split(":");
 		var macAddrHex:Array<Int> = [];
 		for (i in 0...macAddrSt.length) 
 		{
