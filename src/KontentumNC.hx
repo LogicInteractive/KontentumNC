@@ -74,14 +74,25 @@ class KontentumNC
 	
 		httpPingRequest = new HttpRequest( { url:kontentumLink+restPingRelay+"/"+apiKey, callback:onHttpResponse });		
 		
-		pingTimer = new Timer(Std.int(pingTime*1000));
-		pingTimer.run = onPing;
+		startPingTimer();
 		onPing();
 	}
 	
 	function onPing() 
 	{
+		trace("Pinging server");
 		httpPingRequest.clone().send();
+	}
+	
+	/////////////////////////////////////////////////////////////////////////////////////
+
+	function startPingTimer() 
+	{
+		if (pingTimer != null)
+			pingTimer.stop();
+			
+		pingTimer = new Timer(Std.int(pingTime*1000));
+		pingTimer.run = onPing;
 	}
 	
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -91,9 +102,16 @@ class KontentumNC
 		if (response.isOK)
 		{
 			var response:Dynamic = response.toJson();
-			pingTime = Std.parseFloat(response.ping);
-			if (pingTime == 0)
-				pingTime = settings.config.kontentum.ping;
+			var newPingTime:Float = Std.parseFloat(response.ping);
+			if (newPingTime > 0 && (newPingTime!=pingTime))
+			{
+				pingTime = newPingTime;
+				if (pingTime == 0)
+					pingTime = settings.config.kontentum.ping;
+					
+				trace("Setting new ping time: " + newPingTime + " seconds.");
+				startPingTimer();
+			}
 				
 			processClientList(response.clients);
 			//trace(response.content);
@@ -133,6 +151,11 @@ class KontentumNC
 	function processClientList(clientArr:Array<Dynamic>) 
 	{
 		var pingClients:Array<ClientInfo> = [];
+		trace("Clients: ["+pingClients.length+"]");
+		
+		if (pingClients.length == 0)
+			return;
+			
 		for (i in 0...clientArr.length) 
 		{
 			pingClients.push(
