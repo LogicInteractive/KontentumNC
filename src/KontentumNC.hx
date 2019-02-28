@@ -171,7 +171,7 @@ class KontentumNC
 		adr.host = new Host(ip).ip;
 		adr.port = 9; //Hardcoded for WOL
 
-		//udpSocket.sendTo(packet, 0, packet.length, adr);	
+		udpSocket.sendTo(packet, 0, packet.length, adr);	
 		trace("WOL packet sent to " + ip + " [" + macAdr + "]");
 	}
 	
