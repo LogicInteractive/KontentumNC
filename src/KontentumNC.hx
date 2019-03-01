@@ -63,7 +63,8 @@ class KontentumNC
 	
 	public function new()
 	{
-		settings = loadSettings("config.xml");
+		trace(Sys.getCwd());
+		settings = loadSettings(Sys.getCwd()+"config.xml");
 		if (settings == null)
 			exitWithError("Error! Malformed XML");
 			
