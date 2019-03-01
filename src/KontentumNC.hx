@@ -63,8 +63,17 @@ class KontentumNC
 	
 	public function new()
 	{
-		trace(Sys.programPath());
-		settings = loadSettings(Sys.programPath()+"config.xml");
+		var appDir:String = Sys.programPath().split(".exe").join("");
+		if (appDir.split("KontentumNC").length > 1)
+		{
+			var si:Int = appDir.lastIndexOf("KontentumNC");
+			appDir = appDir.substring(0, si);
+		}
+		
+		trace(appDir);
+		return;
+		
+		settings = loadSettings(appDir+"config.xml");
 		if (settings == null)
 			exitWithError("Error! Malformed XML");
 			
