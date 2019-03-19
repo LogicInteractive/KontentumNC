@@ -1,0 +1,8 @@
+-cp src
+-cp C:/dev/haxe/UIX.hx
+-cpp bin
+-main KontentumNC
+-lib akifox-asynchttp
+--connect 8000
+--times
+

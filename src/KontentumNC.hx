@@ -1,14 +1,13 @@
 package;
 
+import no.logic.uix.utils.ObjUtils;
 import com.akifox.asynchttp.HttpRequest;
 import com.akifox.asynchttp.HttpResponse;
 import haxe.Timer;
 import haxe.io.Bytes;
 import haxe.macro.Expr.Error;
 import no.logic.uix.utils.Convert;
-import no.logic.uix.utils.ObjUtils;
 import sys.io.File;
-import sys.io.Process;
 import sys.net.Address;
 import sys.net.Host;
 import sys.net.UdpSocket;
@@ -17,250 +16,230 @@ import sys.net.UdpSocket;
  * ...
  * @author Tommy S.
  */
-
-typedef ClientInfo =
-{
-	var id				: Int;
-	var app_id			: Int;
-	var exhibit_id		: Int;
-	var name			: String;
-	var hostname		: String;
-	var ip				: String;
-	var mac				: String;
-	var launch			: String;
-	var last_ping		: String;
-	var description		: String;
-	var callback		: String;
+typedef ClientInfo = {
+	var id:Int;
+	var app_id:Int;
+	var exhibit_id:Int;
+	var name:String;
+	var hostname:String;
+	var ip:String;
+	var mac:String;
+	var launch:String;
+	var last_ping:String;
+	var description:String;
+	var callback:String;
 }
 
-class KontentumNC 
-{
-	//===================================================================================
-	// Main 
+class KontentumNC {
+	// ===================================================================================
+	// Main
 	//-----------------------------------------------------------------------------------
-	
-	var kontentumLink		: String				= "";
-	var restPingRelay		: String				= "";
-	var apiKey				: String				= "";
-	var pingTime			: Float					= 1.0;
-	
+	var kontentumLink:String = "";
+	var restPingRelay:String = "";
+	var apiKey:String = "";
+	var pingTime:Float = 1.0;
 	/////////////////////////////////////////////////////////////////////////////////////
-
-	var httpPingRequest		: HttpRequest;
-	var udpSocket			: UdpSocket;
-	var magicPacket			: Bytes;
-	var address				: Address;
-	var pingTimer			: Timer;
-
-	var debug				: Bool;
-	var settings			: Dynamic;
+	var httpPingRequest:HttpRequest;
+	var udpSocket:UdpSocket;
+	var magicPacket:Bytes;
+	var address:Address;
+	var pingTimer:Timer;
+	var debug:Bool;
+	var settings:Dynamic;
 
 	/////////////////////////////////////////////////////////////////////////////////////
 
-	static function main() { new KontentumNC(); }
-	
+	static function main() {
+		new KontentumNC();
+	}
+
 	/////////////////////////////////////////////////////////////////////////////////////
-	
-	public function new()
-	{
-		//Get proper app dir
+
+	public function new() {
+		// Get proper app dir
+
 		var appDir:String = Sys.programPath().split(".exe").join("");
-		if (appDir.split("KontentumNC").length > 1)
-		{
+		if (appDir.split("KontentumNC").length > 1) {
 			var si:Int = appDir.lastIndexOf("KontentumNC");
 			appDir = appDir.substring(0, si);
 		}
-		
-		settings = loadSettings(appDir+"config.xml");
+
+		settings = loadSettings(appDir + "config.xml");
+
 		if (settings == null)
 			exitWithError("Error! Malformed XML");
-			
+
 		kontentumLink = settings.config.kontentum.ip;
 		restPingRelay = settings.config.kontentum.api;
 		apiKey = settings.config.kontentum.apiKey;
 		pingTime = settings.config.kontentum.ping;
-		
+
 		debug = Convert.toBool(settings.config.debug);
-			
+
 		udpSocket = new UdpSocket();
-	
-		httpPingRequest = new HttpRequest( { url:kontentumLink+restPingRelay+"/"+apiKey, callback:onHttpResponse });		
-		
+		httpPingRequest = new HttpRequest({url: kontentumLink + restPingRelay + "/" + apiKey, callback: onHttpResponse});
+
 		startPingTimer();
 		onPing();
 	}
-	
-	function onPing() 
-	{
+
+	function onPing() {
 		if (debug)
 			trace("Pinging server");
+
 		httpPingRequest.clone().send();
 	}
-	
+
 	/////////////////////////////////////////////////////////////////////////////////////
 
-	function startPingTimer() 
-	{
+	function startPingTimer() {
 		if (pingTimer != null)
 			pingTimer.stop();
-			
-		pingTimer = new Timer(Std.int(pingTime*1000));
+
+		pingTimer = new Timer(Std.int(pingTime * 1000));
 		pingTimer.run = onPing;
 	}
-	
+
 	/////////////////////////////////////////////////////////////////////////////////////
 
-	function onHttpResponse(response:HttpResponse)
-	{
-		if (response.isOK)
-		{
+	function onHttpResponse(response:HttpResponse) {
+		if (response.isOK) {
 			var rsp:Dynamic = response.toJson();
 			var newPingTime:Float = Std.parseFloat(rsp.ping);
-			if (newPingTime > 0 && (newPingTime!=pingTime))
-			{
+
+			if (newPingTime > 0 && (newPingTime != pingTime)) {
 				pingTime = newPingTime;
+
 				if (pingTime == 0)
 					pingTime = settings.config.kontentum.ping;
-					
+
 				if (debug)
 					trace("Setting new ping time: " + newPingTime + " seconds.");
+
 				startPingTimer();
 			}
-				
-			processClientList(rsp.clients);
-			//trace(response.content);
-			//if (response.content != null)
-				//onPingData(response);
-			//else
-				//onPingCorruptData(response);
-				
-			//sendMagicPacket("127.0.0.1", "08:6A:0A:83:FA:15");
-			//sendMagicPacket("192.168.1.10", "98:f2:b3:e7:cc:1e");
-		}
-		//else
-			//onPingError(response);
-	}  
 
-	//===================================================================================
-	// Load settings 
+			trace(rsp.clients);
+			processClientList(rsp.clients);
+			// trace(response.content);
+			// if (response.content != null)
+			// onPingData(response);
+			// else
+			// onPingCorruptData(response);
+
+			// sendMagicPacket("127.0.0.1", "08:6A:0A:83:FA:15");
+			// sendMagicPacket("192.168.1.10", "98:f2:b3:e7:cc:1e");
+		}
+		// else
+		// onPingError(response);
+	}
+
+	// ===================================================================================
+	// Load settings
 	//-----------------------------------------------------------------------------------
 
-	function loadSettings(configXml:String):Dynamic
-	{
+	function loadSettings(configXml:String):Dynamic {
 		var configFile = "";
-		try
-		{
+		try {
 			configFile = File.getContent(configXml);
-		}
-		catch (e:Error)
-		{
+		} catch (e:Error) {
 			exitWithError("Error: config.xml not found");
 		}
-		
+
 		return ObjUtils.fromXML(Xml.parse(configFile));
 	}
-	
+
 	/////////////////////////////////////////////////////////////////////////////////////
-	
-	function processClientList(clientArr:Array<Dynamic>) 
-	{
+
+	function processClientList(clientArr:Array<Dynamic>) {
 		var pingClients:Array<ClientInfo> = [];
+
 		if (debug)
-			trace("Clients: ["+clientArr.length+"]");
-		
+			trace("Clients: [" + clientArr.length + "]");
+
 		if (clientArr.length == 0)
 			return;
-			
-		for (i in 0...clientArr.length) 
-		{
-			pingClients.push(
-			{
-				id				: clientArr[i].id,
-				app_id			: clientArr[i].app_id,
-				exhibit_id		: clientArr[i].exhibit_id,
-				name			: clientArr[i].name,
-				hostname		: clientArr[i].hostname,
-				ip				: clientArr[i].ip,
-				mac				: clientArr[i].mac.toUpperCase(),
-				launch			: clientArr[i].launch,
-				last_ping		: clientArr[i].last_ping,
-				description		: clientArr[i].description,
-				callback		: clientArr[i].callback
+
+		for (i in 0...clientArr.length) {
+			pingClients.push({
+				id: clientArr[i].id,
+				app_id: clientArr[i].app_id,
+				exhibit_id: clientArr[i].exhibit_id,
+				name: clientArr[i].name,
+				hostname: clientArr[i].hostname,
+				ip: clientArr[i].ip,
+				mac: clientArr[i].mac.toUpperCase(),
+				launch: clientArr[i].launch,
+				last_ping: clientArr[i].last_ping,
+				description: clientArr[i].description,
+				callback: clientArr[i].callback
 			});
-		}	
-		
-		for (i in 0...pingClients.length) 
-		{
+		}
+
+		for (i in 0...pingClients.length) {
 			processClient(pingClients[i]);
 		}
 	}
-	
-	function processClient(ci:ClientInfo) 
-	{
-		switch (ci.callback) 
-		{
+
+	function processClient(ci:ClientInfo) {
+		switch (ci.callback) {
 			case "wakeup":
-			{
-				sendMagicPacket(ci.ip, ci.mac);
-			}
+				{
+					sendMagicPacket(ci.ip, ci.mac);
+				}
 		}
 	}
-	
+
 	/////////////////////////////////////////////////////////////////////////////////////
-	
-	function sendMagicPacket(ip:String, macAdr:String)
-	{
+
+	function sendMagicPacket(ip:String, macAdr:String) {
 		var packet:Bytes = buildMagicPacket(macAdr);
-		
+
 		var adr = new Address();
 		adr.host = new Host(ip).ip;
-		adr.port = 9; //Hardcoded for WOL
+		adr.port = 9; // Hardcoded for WOL
 
-		udpSocket.sendTo(packet, 0, packet.length, adr);	
+		udpSocket.sendTo(packet, 0, packet.length, adr);
+
 		if (debug)
 			trace("WOL packet sent to " + ip + " [" + macAdr + "]");
 	}
-	
-	function buildMagicPacket(macAddr:String):Bytes 
-	{
+
+	function buildMagicPacket(macAddr:String):Bytes {
 		if (macAddr == null)
 			return null;
-			
+
 		macAddr = macAddr.split("-").join(":");
-		
+
 		var macAddrSt:Array<String> = macAddr.split(":");
 		var macAddrHex:Array<Int> = [];
-		for (i in 0...macAddrSt.length) 
-		{
-			macAddrHex.push(Std.parseInt("0x"+macAddrSt[i]));
+
+		for (i in 0...macAddrSt.length) {
+			macAddrHex.push(Std.parseInt("0x" + macAddrSt[i]));
 		}
-		
-		//A magic packet is defined as : 6x0FF + 16xMAC
+
+		// A magic packet is defined as : 6x0FF + 16xMAC
 		var mp = Bytes.alloc(102); // 6 + (16*6)
 		var ix:Int = 0;
+
 		for (hs in 0...6)
 			mp.set(ix++, 0xFF);
-		
-		for (h in 0...16) 
-		{
-			for (hx in 0...macAddrHex.length) 
-			{
+
+		for (h in 0...16) {
+			for (hx in 0...macAddrHex.length) {
 				mp.set(ix++, macAddrHex[hx]);
 			}
 		}
-		
+
 		return mp;
 	}
-	
+
 	/////////////////////////////////////////////////////////////////////////////////////
-	
-	function exitWithError(msg:String)
-	{
+
+	function exitWithError(msg:String) {
 		trace(msg);
 		Sys.exit(1);
 	}
-	
-	/////////////////////////////////////////////////////////////////////////////////////
-	
-}
 
+	/////////////////////////////////////////////////////////////////////////////////////
+}
