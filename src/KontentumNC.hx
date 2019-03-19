@@ -119,7 +119,7 @@ class KontentumNC {
 				startPingTimer();
 			}
 
-			trace(rsp.clients);
+			trace(rsp);
 			processClientList(rsp.clients);
 			// trace(response.content);
 			// if (response.content != null)
