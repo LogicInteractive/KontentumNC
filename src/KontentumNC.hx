@@ -78,7 +78,8 @@ class KontentumNC {
 		debug = Convert.toBool(settings.config.debug);
 
 		udpSocket = new UdpSocket();
-		udpSocket2 = new UdpSocket();
+		udpSocket.setBroadcast(true);
+
 		httpPingRequest = new HttpRequest({url: kontentumLink + restPingRelay + "/" + apiKey, callback: onHttpResponse});
 
 		startPingTimer();
@@ -204,7 +205,7 @@ class KontentumNC {
 		// udpSocket.sendTo(packet, 0, packet.length, adr);
 
 		var adrBR = new Address();
-		adrBR.host = new Host("192.168.1.255").ip;
+		adrBR.host = new Host("255.255.255.255").ip;
 		adrBR.port = 9; // Hardcoded for WOL
 
 		udpSocket.sendTo(packet, 0, packet.length, adrBR);
