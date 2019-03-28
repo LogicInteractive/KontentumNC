@@ -41,6 +41,7 @@ class KontentumNC {
 	/////////////////////////////////////////////////////////////////////////////////////
 	var httpPingRequest:HttpRequest;
 	var udpSocket:UdpSocket;
+	var udpSocket2:UdpSocket;
 	var magicPacket:Bytes;
 	var address:Address;
 	var pingTimer:Timer;
@@ -77,6 +78,7 @@ class KontentumNC {
 		debug = Convert.toBool(settings.config.debug);
 
 		udpSocket = new UdpSocket();
+		udpSocket2 = new UdpSocket();
 		httpPingRequest = new HttpRequest({url: kontentumLink + restPingRelay + "/" + apiKey, callback: onHttpResponse});
 
 		startPingTimer();
@@ -205,7 +207,7 @@ class KontentumNC {
 		adrBR.host = new Host("255.255.255.255").ip;
 		adrBR.port = 9; // Hardcoded for WOL
 
-		udpSocket.sendTo(packet, 0, packet.length, adrBR);
+		udpSocket2.sendTo(packet, 0, packet.length, adrBR);
 
 		if (debug)
 			trace("WOL packet sent to " + ip + " [" + macAdr + "]");
