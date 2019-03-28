@@ -197,17 +197,17 @@ class KontentumNC {
 	function sendMagicPacket(ip:String, macAdr:String) {
 		var packet:Bytes = buildMagicPacket(macAdr);
 
-		var adr = new Address();
-		adr.host = new Host(ip).ip;
-		adr.port = 9; // Hardcoded for WOL
+		// var adr = new Address();
+		// adr.host = new Host(ip).ip;
+		// adr.port = 9; // Hardcoded for WOL
 
-		udpSocket.sendTo(packet, 0, packet.length, adr);
+		// udpSocket.sendTo(packet, 0, packet.length, adr);
 
 		var adrBR = new Address();
 		adrBR.host = new Host("255.255.255.255").ip;
 		adrBR.port = 9; // Hardcoded for WOL
 
-		udpSocket2.sendTo(packet, 0, packet.length, adrBR);
+		udpSocket.sendTo(packet, 0, packet.length, adrBR);
 
 		if (debug)
 			trace("WOL packet sent to " + ip + " [" + macAdr + "]");
