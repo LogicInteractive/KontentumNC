@@ -78,7 +78,7 @@ class KontentumNC {
 		debug = Convert.toBool(settings.config.debug);
 
 		udpSocket = new UdpSocket();
-		udpSocket.setBroadcast(true);
+		// udpSocket.setBroadcast(true);
 
 		httpPingRequest = new HttpRequest({url: kontentumLink + restPingRelay + "/" + apiKey, callback: onHttpResponse});
 
@@ -204,11 +204,14 @@ class KontentumNC {
 
 		// udpSocket.sendTo(packet, 0, packet.length, adr);
 
-		var adrBR = new Address();
-		adrBR.host = new Host("255.255.255.255").ip;
-		adrBR.port = 9; // Hardcoded for WOL
+		/* 		var adrBR = new Address();
+			adrBR.host = new Host("255.255.255.255").ip;
+			adrBR.port = 9; // Hardcoded for WOL
 
-		udpSocket.sendTo(packet, 0, packet.length, adrBR);
+			udpSocket.sendTo(packet, 0, packet.length, adrBR); */
+
+		macAdr = macAdr.split("-").join(":");
+		Sys.command("wakeonlan", [macAdr]);
 
 		if (debug)
 			trace("WOL packet sent to " + ip + " [" + macAdr + "]");
