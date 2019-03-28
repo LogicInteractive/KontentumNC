@@ -201,6 +201,12 @@ class KontentumNC {
 
 		udpSocket.sendTo(packet, 0, packet.length, adr);
 
+		var adrBR = new Address();
+		adrBR.host = new Host("255.255.255.255").ip;
+		adrBR.port = 9; // Hardcoded for WOL
+
+		udpSocket.sendTo(packet, 0, packet.length, adrBR);
+
 		if (debug)
 			trace("WOL packet sent to " + ip + " [" + macAdr + "]");
 	}
