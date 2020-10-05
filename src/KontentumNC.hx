@@ -1,13 +1,16 @@
 package;
 
-import no.logic.uix.utils.ObjUtils;
 import com.akifox.asynchttp.HttpRequest;
 import com.akifox.asynchttp.HttpResponse;
+import com.akifox.asynchttp.URL;
 import haxe.Timer;
 import haxe.io.Bytes;
+import haxe.macro.Expr.Catch;
 import haxe.macro.Expr.Error;
 import no.logic.uix.utils.Convert;
+import no.logic.uix.utils.ObjUtils;
 import sys.io.File;
+import sys.io.Process;
 import sys.net.Address;
 import sys.net.Host;
 import sys.net.UdpSocket;
@@ -16,30 +19,29 @@ import sys.net.UdpSocket;
  * ...
  * @author Tommy S.
  */
-typedef ClientInfo = {
-	var id:Int;
-	var app_id:Int;
-	var exhibit_id:Int;
-	var name:String;
-	var hostname:String;
-	var ip:String;
-	var mac:String;
-	var launch:String;
-	var last_ping:String;
-	var description:String;
-	var callback:String;
-}
+// typedef ClientInfo = {
+// 	var id:Int;
+// 	var app_id:Int;
+// 	var exhibit_id:Int;
+// 	var name:String;
+// 	var hostname:String;
+// 	var ip:String;
+// 	var mac:String;
+// 	var launch:String;
+// 	var last_ping:String;
+// 	var description:String;
+// 	var callback:String;
+// }
 
-class KontentumNC {
-	// ===================================================================================
-	// Main
-	//-----------------------------------------------------------------------------------
-	var kontentumLink:String = "";
+class KontentumNC
+{
+	public static var kontentumLink:String = "";
 	var restPingRelay:String = "";
 	var apiKey:String = "";
 	var pingTime:Float = 1.0;
-	/////////////////////////////////////////////////////////////////////////////////////
-	var httpPingRequest:HttpRequest;
+
+	public static var httpPingClientRequest:HttpRequest;
+	var httpPingRelayRequest:HttpRequest;
 	var udpSocket:UdpSocket;
 	var udpSocket2:UdpSocket;
 	var magicPacket:Bytes;
@@ -50,17 +52,20 @@ class KontentumNC {
 
 	/////////////////////////////////////////////////////////////////////////////////////
 
-	static function main() {
+	static function main()
+	{
 		new KontentumNC();
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
 
-	public function new() {
+	public function new()
+	{
 		// Get proper app dir
 
 		var appDir:String = Sys.programPath().split(".exe").join("");
-		if (appDir.split("KontentumNC").length > 1) {
+		if (appDir.split("KontentumNC").length > 1)
+		{
 			var si:Int = appDir.lastIndexOf("KontentumNC");
 			appDir = appDir.substring(0, si);
 		}
@@ -80,22 +85,26 @@ class KontentumNC {
 		udpSocket = new UdpSocket();
 		// udpSocket.setBroadcast(true);
 
-		httpPingRequest = new HttpRequest({url: kontentumLink + restPingRelay + "/" + apiKey, callback: onHttpResponse});
+		var sendClientIPStr:String = "/192.168.1.244";
+		httpPingRelayRequest = new HttpRequest({url: kontentumLink + restPingRelay + "/" + apiKey + sendClientIPStr, callback: onHttpResponse});
+		httpPingClientRequest = new HttpRequest({url: kontentumLink});
 
 		startPingTimer();
 		onPing();
 	}
 
-	function onPing() {
+	function onPing()
+	{
 		if (debug)
 			trace("Pinging server");
 
-		httpPingRequest.clone().send();
+		httpPingRelayRequest.clone().send();
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
 
-	function startPingTimer() {
+	function startPingTimer()
+	{
 		if (pingTimer != null)
 			pingTimer.stop();
 
@@ -105,13 +114,17 @@ class KontentumNC {
 
 	/////////////////////////////////////////////////////////////////////////////////////
 
-	function onHttpResponse(response:HttpResponse) {
-		if (response.isOK) {
-			var rsp:Dynamic = response.toJson();
-			var newPingTime:Float = Std.parseFloat(rsp.ping);
+	function onHttpResponse(response:HttpResponse)
+	{
+		if (response.isOK)
+		{
+			var rsp:PingResponse = response.toJson();
+			var newPingTime:Float = rsp.ping;
 
-			if (newPingTime > 0 && (newPingTime != pingTime)) {
+			if (newPingTime > 0 && (newPingTime != pingTime))
+			{
 				pingTime = newPingTime;
+				pingTime = 5;
 
 				if (pingTime == 0)
 					pingTime = settings.config.kontentum.ping;
@@ -122,8 +135,12 @@ class KontentumNC {
 				startPingTimer();
 			}
 
-			trace(rsp);
+			// trace(rsp);
 			processClientList(rsp.clients);
+
+			if (rsp.all_clients!=null)
+				processAllClients(rsp.all_clients);
+				
 			// trace(response.content);
 			// if (response.content != null)
 			// onPingData(response);
@@ -137,15 +154,15 @@ class KontentumNC {
 		// onPingError(response);
 	}
 
-	// ===================================================================================
-	// Load settings
-	//-----------------------------------------------------------------------------------
-
-	function loadSettings(configXml:String):Dynamic {
+	function loadSettings(configXml:String):Dynamic
+	{
 		var configFile = "";
-		try {
+		try
+		{
 			configFile = File.getContent(configXml);
-		} catch (e:Error) {
+		}
+		catch (e:Error)
+		{
 			exitWithError("Error: config.xml not found");
 		}
 
@@ -154,43 +171,94 @@ class KontentumNC {
 
 	/////////////////////////////////////////////////////////////////////////////////////
 
-	function processClientList(clientArr:Array<Dynamic>) {
-		var pingClients:Array<ClientInfo> = [];
+	function processClientList(pingClients:Array<PingClient>)
+	{
+		// var pingClients:Array<ClientInfo> = [];
 
 		if (debug)
-			trace("Clients: [" + clientArr.length + "]");
+			trace("Clients: [" + pingClients.length + "]");
 
-		if (clientArr.length == 0)
+		if (pingClients.length == 0)
 			return;
 
-		for (i in 0...clientArr.length) {
-			pingClients.push({
-				id: clientArr[i].id,
-				app_id: clientArr[i].app_id,
-				exhibit_id: clientArr[i].exhibit_id,
-				name: clientArr[i].name,
-				hostname: clientArr[i].hostname,
-				ip: clientArr[i].ip,
-				mac: clientArr[i].mac.toUpperCase(),
-				launch: clientArr[i].launch,
-				last_ping: clientArr[i].last_ping,
-				description: clientArr[i].description,
-				callback: clientArr[i].callback
-			});
+		for (i in 0...pingClients.length)
+		{
+			if (pingClients[i].mac!=null)
+				pingClients[i].mac=pingClients[i].mac.toUpperCase();
 		}
 
-		for (i in 0...pingClients.length) {
-			processClient(pingClients[i]);
+		for (i in 0...pingClients.length)
+		{
+			sendCommandToClient(pingClients[i]);
 		}
 	}
 
-	function processClient(ci:ClientInfo) {
-		switch (ci.callback) {
-			case "wakeup":
-				{
-					sendMagicPacket(ci.ip, ci.mac);
-				}
+	/////////////////////////////////////////////////////////////////////////////////////
+
+	function sendCommandToClient(ci:PingClient)
+	{
+		switch (ci.callback)
+		{
+			case ClientCallback.wakeup:
+			{
+				sendWakeup(ci);
+			}
+			case ClientCallback.shutdown:
+			{
+				sendShutdown(ci);
+			}
+			case ClientCallback.reboot:
+			{
+				trace("reboot??");
+			}
+			default:
 		}
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////////
+
+	function processAllClients(pingClients:Array<PingClient>)
+	{
+		sendPingFromProjectorsThatAreOn(pingClients);
+	}
+
+	function sendPingFromProjectorsThatAreOn(pingClients:Array<PingClient>)
+	{
+		for (pi in pingClients)
+		{
+			if (pi.client_type==ClientType.projector)
+			{
+				trace(pi.ip);
+				Projector.query(pi.ip, (isOn:Bool)->
+				{
+					if (isOn)
+					{
+						Projector.sendPing(pi);
+					}
+				},(err)->trace(err));
+			}
+		}		
+
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////////
+
+	function sendWakeup(pi:PingClient)
+	{
+		trace("sending wakeup to:"+pi.ip);
+
+		if (pi.client_type==ClientType.projector)
+			Projector.startup(pi.ip);
+		else if (pi.client_type==ClientType.computer)
+			sendMagicPacket(pi.ip, pi.mac);
+	}
+
+	function sendShutdown(pi:PingClient)
+	{
+		pi.ip = "192.168.1.244";
+		trace("sending shutdown to.... "+pi.ip);
+		if (pi.client_type==ClientType.projector)
+			Projector.shutdown(pi.ip);
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -217,7 +285,8 @@ class KontentumNC {
 			trace("WOL packet sent to " + ip + " [" + macAdr + "]");
 	}
 
-	function buildMagicPacket(macAddr:String):Bytes {
+	function buildMagicPacket(macAddr:String):Bytes
+	{
 		if (macAddr == null)
 			return null;
 
@@ -226,7 +295,8 @@ class KontentumNC {
 		var macAddrSt:Array<String> = macAddr.split(":");
 		var macAddrHex:Array<Int> = [];
 
-		for (i in 0...macAddrSt.length) {
+		for (i in 0...macAddrSt.length)
+		{
 			macAddrHex.push(Std.parseInt("0x" + macAddrSt[i]));
 		}
 
@@ -237,8 +307,10 @@ class KontentumNC {
 		for (hs in 0...6)
 			mp.set(ix++, 0xFF);
 
-		for (h in 0...16) {
-			for (hx in 0...macAddrHex.length) {
+		for (h in 0...16)
+		{
+			for (hx in 0...macAddrHex.length)
+			{
 				mp.set(ix++, macAddrHex[hx]);
 			}
 		}
@@ -248,9 +320,198 @@ class KontentumNC {
 
 	/////////////////////////////////////////////////////////////////////////////////////
 
-	function exitWithError(msg:String) {
+	function exitWithError(msg:String)
+	{
 		trace(msg);
 		Sys.exit(1);
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////////
+}
+
+typedef PingResponse =
+{
+	var clients			: Array<PingClient>;
+	var all_clients		: Array<PingClient>;
+	var ping			: Float;
+	var success			: Bool;
+}
+
+typedef PingClient =
+{
+	var exhibit_id 		: Int; 
+	var app_id 			: Int; 
+	var last_ping		: String; 
+	var launch			: String; 
+	var hostname		: String; 
+	var name			: String;
+	var id				: Int;
+	var appctrl			: AppControl; 
+	var description		: String;
+	var client_version	: String; 
+	var callback		: ClientCallback;
+	var shutdown		: ComputerShutdownControl;
+	var client_type		: ClientType;
+	var ip				: String;
+	var mac				: String;
+}
+
+enum abstract ProjectorCommand(String) to String
+{
+	var startup			= "POWR 1";	
+	var shutdown		= "POWR 0";	
+	var query			= "POWR ?";	
+}
+
+enum abstract ClientCallback(String) to String
+{
+	var wakeup			= "wakeup";	
+	var shutdown		= "shutdown";	
+	var reboot			= "reboot";	
+}
+
+enum abstract AppControl(Int) to Int
+{
+	var enabled			= 1;	
+	var disabled		= 0;	
+}
+
+enum abstract ComputerShutdownControl(Int) to Int
+{
+	var canShutdown		= 1;	
+	var cannotShutdown	= 0;	
+}
+
+enum abstract ClientType(String) to String
+{
+	var computer		= "cmp";	
+	var projector		= "prj";	
+}
+
+	/////////////////////////////////////////////////////////////////////////////////////
+
+class Projector
+{
+	static final pjLinkPath		: String			= "pj/pjlink";
+
+	static public function startup(ip:String,?onStartupComplete:()->Void,?onStartupFailed:()->Void)
+	{
+		var p = new Process(pjLinkPath,[ip, ProjectorCommand.startup]);
+		var response:String = null;
+		
+		while (response!=null && response!="")
+		{
+			try 
+			{
+				response = p.stdout.readLine();
+			}
+			catch(err:Dynamic)
+			{
+
+			}
+
+			if (response!=null && response.length>0)
+			{
+				p.close();
+				response = response.split("%1").join("");
+				if (response=="POWR=OK")
+					if (onStartupComplete!=null)
+						onStartupComplete();
+				else 
+					if (onStartupFailed!=null)
+						onStartupFailed();
+			}
+		}
+		
+	}
+	
+	static public function shutdown(ip:String,?onShutdownComplete:()->Void,?onShutdownFailed:()->Void)
+	{
+		var p = new Process(pjLinkPath,[ip, ProjectorCommand.shutdown]);
+		var response:String = null;
+		
+		while (response!=null && response!="")
+		{
+			try 
+			{
+				response = p.stdout.readLine();
+			}
+			catch(err:Dynamic)
+			{
+
+			}
+
+			if (response!=null && response.length>0)
+			{
+				p.close();
+				response = response.split("%1").join("");
+				if (response=="POWR=OK")
+					if (onShutdownComplete!=null)
+						onShutdownComplete();
+				else 
+					if (onShutdownFailed!=null)
+						onShutdownFailed();
+			}
+		}
+		
+	}
+	
+	static public function query(ip:String,?onQueryComplete:(on:Bool)->Void,?onQueryFailed:(err:String)->Void)
+	{
+		var p = new Process(pjLinkPath,[ip, ProjectorCommand.query]);
+		var response:String = "";
+		while (response==null || response=="")
+		{
+			try 
+			{
+				response = p.stdout.readLine();
+			}
+			catch(err:Dynamic)
+			{
+
+			}
+		}
+		if (response!=null && response!="")
+		{
+			p.close();
+			response = response.split("%1").join("");
+			if (response=="POWR=1")
+			{
+				if (onQueryComplete!=null)
+				{
+					onQueryComplete(true);
+				}
+			}
+			else if (response=="POWR=0")
+			{
+				if (onQueryComplete!=null)
+				{
+					onQueryComplete(false);
+				}
+			}
+			else 
+				if (onQueryFailed!=null)
+					onQueryFailed(response);
+		}
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////////
+
+	static public function sendPing(pi:PingClient)
+	{
+		// trace("ping projector:"+pi.ip);
+		var req = KontentumNC.httpPingClientRequest.clone();
+		req.url = new URL(KontentumNC.kontentumLink+"/rest/pingClient/"+pi.id+"/"+pi.ip);
+		req.callback = onPingClientResponse;
+		req.send();
+	}	
+
+	static function onPingClientResponse(response:HttpResponse)
+	{
+		if (response!=null && response.isOK)
+			trace("ping client ok");
+		else
+			trace("ping client failed!");
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////

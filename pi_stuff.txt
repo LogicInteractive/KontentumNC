@@ -1,0 +1,20 @@
+::::: create : /home/pi/runKNC.sh
+
+#!/bin/bash
+while :
+do
+if [[ $(pidof KontentumNC | wc -l) -eq 0 ]]; then
+    sudo /home/pi/KontentumNC/bin/KontentumNC #run the kontentum client if not already running - (check folder)
+fi
+sleep 2
+done
+
+::::: make script executable
+
+sudo chmod +x runKNC.sh 
+
+
+
+::::: edit : /etc/rc.local
+
+sudo /home/pi/runKNC.sh
