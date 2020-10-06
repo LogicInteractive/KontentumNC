@@ -3,12 +3,14 @@ package;
 import com.akifox.asynchttp.HttpRequest;
 import com.akifox.asynchttp.HttpResponse;
 import com.akifox.asynchttp.URL;
+import haxe.Json;
 import haxe.Timer;
 import haxe.io.Bytes;
 import haxe.macro.Expr.Catch;
 import haxe.macro.Expr.Error;
 import no.logic.uix.utils.Convert;
 import no.logic.uix.utils.ObjUtils;
+import sys.FileSystem;
 import sys.io.File;
 import sys.io.Process;
 import sys.net.Address;
@@ -19,36 +21,25 @@ import sys.net.UdpSocket;
  * ...
  * @author Tommy S.
  */
-// typedef ClientInfo = {
-// 	var id:Int;
-// 	var app_id:Int;
-// 	var exhibit_id:Int;
-// 	var name:String;
-// 	var hostname:String;
-// 	var ip:String;
-// 	var mac:String;
-// 	var launch:String;
-// 	var last_ping:String;
-// 	var description:String;
-// 	var callback:String;
-// }
 
 class KontentumNC
 {
-	public static var kontentumLink:String = "";
-	var restPingRelay:String = "";
-	var apiKey:String = "";
-	var pingTime:Float = 1.0;
+	public static var kontentumLink				: String			= "";
+	var restPingRelay							: String 			= "";
+	var apiKey									: String 			= "";
+	var pingTime								: Float 			= 1.0;
 
-	public static var httpPingClientRequest:HttpRequest;
-	var httpPingRelayRequest:HttpRequest;
-	var udpSocket:UdpSocket;
-	var udpSocket2:UdpSocket;
-	var magicPacket:Bytes;
-	var address:Address;
-	var pingTimer:Timer;
-	var debug:Bool;
-	var settings:Dynamic;
+	public static var httpPingClientRequest		: HttpRequest;
+	var httpPingRelayRequest					: HttpRequest;
+	var udpSocket								: UdpSocket;
+	var udpSocket2								: UdpSocket;
+	var magicPacket								: Bytes;
+	var address									: Address;
+	var pingTimer								: Timer;
+	var debug									: Bool;
+	var settings								: Dynamic;
+
+	var pClientsJson							: String;
 
 	/////////////////////////////////////////////////////////////////////////////////////
 
@@ -85,8 +76,7 @@ class KontentumNC
 		udpSocket = new UdpSocket();
 		// udpSocket.setBroadcast(true);
 
-		var sendClientIPStr:String = "/192.168.1.244";
-		httpPingRelayRequest = new HttpRequest({url: kontentumLink + restPingRelay + "/" + apiKey + sendClientIPStr, callback: onHttpResponse});
+		httpPingRelayRequest = new HttpRequest({url: kontentumLink + restPingRelay + "/" + apiKey, callback: onHttpResponse});
 		httpPingClientRequest = new HttpRequest({url: kontentumLink});
 
 		startPingTimer();
@@ -141,6 +131,8 @@ class KontentumNC
 			if (rsp.all_clients!=null)
 				processAllClients(rsp.all_clients);
 				
+			saveOfflineData(rsp);
+
 			// trace(response.content);
 			// if (response.content != null)
 			// onPingData(response);
@@ -215,6 +207,24 @@ class KontentumNC
 		}
 	}
 
+	function saveOfflineData(rsp:PingResponse)
+	{
+		try 
+		{
+			var pcj:String = Json.stringify(rsp.all_clients);
+			if (pcj!=pClientsJson)
+			{
+				var lPath:String = Sys.getCwd();
+				File.saveContent(lPath+"offlineCache",pcj);
+				pClientsJson = pcj;
+			}
+		}
+		catch(err:Dynamic)
+		{
+			
+		}
+	}
+	
 	/////////////////////////////////////////////////////////////////////////////////////
 
 	function processAllClients(pingClients:Array<PingClient>)
@@ -228,7 +238,6 @@ class KontentumNC
 		{
 			if (pi.client_type==ClientType.projector)
 			{
-				trace(pi.ip);
 				Projector.query(pi.ip, (isOn:Bool)->
 				{
 					if (isOn)
@@ -245,7 +254,7 @@ class KontentumNC
 
 	function sendWakeup(pi:PingClient)
 	{
-		trace("sending wakeup to:"+pi.ip);
+		// trace("sending wakeup to:"+pi.ip);
 
 		if (pi.client_type==ClientType.projector)
 			Projector.startup(pi.ip);
@@ -256,7 +265,7 @@ class KontentumNC
 	function sendShutdown(pi:PingClient)
 	{
 		pi.ip = "192.168.1.244";
-		trace("sending shutdown to.... "+pi.ip);
+		// trace("sending shutdown to.... "+pi.ip);
 		if (pi.client_type==ClientType.projector)
 			Projector.shutdown(pi.ip);
 	}
@@ -501,7 +510,7 @@ class Projector
 	{
 		// trace("ping projector:"+pi.ip);
 		var req = KontentumNC.httpPingClientRequest.clone();
-		req.url = new URL(KontentumNC.kontentumLink+"/rest/pingClient/"+pi.id+"/"+pi.ip);
+		req.url = new URL(KontentumNC.kontentumLink+"/rest/pingClient/"+pi.id+"/_/"+pi.ip);
 		req.callback = onPingClientResponse;
 		req.send();
 	}	
@@ -509,7 +518,9 @@ class Projector
 	static function onPingClientResponse(response:HttpResponse)
 	{
 		if (response!=null && response.isOK)
-			trace("ping client ok");
+		{
+			// trace("ping client ok");
+		}
 		else
 			trace("ping client failed!");
 	}
