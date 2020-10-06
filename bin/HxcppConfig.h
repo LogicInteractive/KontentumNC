@@ -5,8 +5,8 @@
 #define HX_LINUX 
 #endif
 
-#if !defined(HXCPP_M64) && !defined(NO_HXCPP_M64)
-#define HXCPP_M64 
+#if !defined(RASPBERRYPI) && !defined(NO_RASPBERRYPI)
+#define RASPBERRYPI RASPBERRYPI
 #endif
 
 #if !defined(HXCPP_VISIT_ALLOCS) && !defined(NO_HXCPP_VISIT_ALLOCS)
@@ -19,10 +19,6 @@
 
 #if !defined(HXCPP_API_LEVEL) && !defined(NO_HXCPP_API_LEVEL)
 #define HXCPP_API_LEVEL 400
-#endif
-
-#if !defined(HXCPP_M64) && !defined(NO_HXCPP_M64)
-#define HXCPP_M64 
 #endif
 
 #include <hxcpp.h>

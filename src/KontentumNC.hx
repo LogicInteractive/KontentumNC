@@ -52,6 +52,7 @@ class KontentumNC
 
 	public function new()
 	{
+
 		// Get proper app dir
 
 		var appDir:String = Sys.programPath().split(".exe").join("");
@@ -153,12 +154,14 @@ class KontentumNC
 		{
 			configFile = File.getContent(configXml);
 		}
-		catch (e:Error)
+		catch (e:Dynamic)
 		{
 			exitWithError("Error: config.xml not found");
 		}
 
 		return ObjUtils.fromXML(Xml.parse(configFile));
+
+		return {};
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -281,11 +284,11 @@ class KontentumNC
 
 		// udpSocket.sendTo(packet, 0, packet.length, adr);
 
-		/* 		var adrBR = new Address();
-			adrBR.host = new Host("255.255.255.255").ip;
-			adrBR.port = 9; // Hardcoded for WOL
+		// 		var adrBR = new Address();
+		//	adrBR.host = new Host("255.255.255.255").ip;
+		//	adrBR.port = 9; // Hardcoded for WOL
 
-			udpSocket.sendTo(packet, 0, packet.length, adrBR); */
+		//	udpSocket.sendTo(packet, 0, packet.length, adrBR);
 
 		macAdr = macAdr.split("-").join(":");
 		Sys.command("wakeonlan", [macAdr]);
@@ -336,6 +339,7 @@ class KontentumNC
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
+
 }
 
 typedef PingResponse =
