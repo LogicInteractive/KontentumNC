@@ -411,6 +411,8 @@ class Projector
 	{
 		var p = new Process(pjLinkPath,[ip, ProjectorCommand.startup]);
 		var response:String = null;
+
+		trace("send wakeup to : "+ip);
 		
 		while (response!=null && response!="")
 		{
@@ -434,6 +436,9 @@ class Projector
 					if (onStartupFailed!=null)
 						onStartupFailed();
 			}
+
+			trace("response : "+response);
+
 		}
 		
 	}
@@ -442,6 +447,8 @@ class Projector
 	{
 		var p = new Process(pjLinkPath,[ip, ProjectorCommand.shutdown]);
 		var response:String = null;
+
+		trace("send shutdown to : "+ip);
 		
 		while (response!=null && response!="")
 		{
@@ -464,6 +471,8 @@ class Projector
 				else 
 					if (onShutdownFailed!=null)
 						onShutdownFailed();
+
+				trace("response : "+response);
 			}
 		}
 		
@@ -473,6 +482,9 @@ class Projector
 	{
 		var p = new Process(pjLinkPath,[ip, ProjectorCommand.query]);
 		var response:String = "";
+
+		trace("send query to : "+ip);
+
 		while (response==null || response=="")
 		{
 			try 
@@ -505,6 +517,8 @@ class Projector
 			else 
 				if (onQueryFailed!=null)
 					onQueryFailed(response);
+
+			trace("response : "+response);
 		}
 	}
 
@@ -512,7 +526,7 @@ class Projector
 
 	static public function sendPing(pi:PingClient)
 	{
-		// trace("ping projector:"+pi.ip);
+		trace("ping projector:"+pi.ip);
 		var req = KontentumNC.httpPingClientRequest.clone();
 		req.url = new URL(KontentumNC.kontentumLink+"/rest/pingClient/"+pi.id+"/_/"+pi.ip);
 		req.callback = onPingClientResponse;
