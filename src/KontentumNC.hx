@@ -36,10 +36,12 @@ class KontentumNC
 	var magicPacket								: Bytes;
 	var address									: Address;
 	var pingTimer								: Timer;
-	var debug									: Bool;
+	static public var debug									: Bool;
 	var settings								: Dynamic;
 
 	var pClientsJson							: String;
+
+	var osName								: String;
 
 	/////////////////////////////////////////////////////////////////////////////////////
 
@@ -54,6 +56,12 @@ class KontentumNC
 	{
 
 		// Get proper app dir
+
+		osName = Sys.systemName();
+		if (osName=="Linux")
+			Projector.pjLinkPath = "/home/pi/KontentumNC/bin/pjl";
+		else
+			Projector.pjLinkPath = "pjl";
 
 		var appDir:String = Sys.programPath().split(".exe").join("");
 		if (appDir.split("KontentumNC").length > 1)
@@ -406,14 +414,15 @@ enum abstract ClientType(String) to String
 
 class Projector
 {
-	static final pjLinkPath		: String			= "pj/pjlink";
+	static public var pjLinkPath		: String;
 
 	static public function startup(ip:String,?onStartupComplete:()->Void,?onStartupFailed:()->Void)
 	{
 		var p = new Process(pjLinkPath,[ip, ProjectorCommand.startup]);
 		var response:String = null;
 
-		// trace("send wakeup to : "+ip);
+		if  (KontentumNC.debug)
+			trace("send wakeup to : "+ip);
 		
 		while (response!=null && response!="")
 		{
@@ -438,7 +447,8 @@ class Projector
 						onStartupFailed();
 			}
 
-			// trace("response : "+response);
+			if  (KontentumNC.debug)
+				trace("response : "+response);
 
 		}
 		
@@ -449,7 +459,8 @@ class Projector
 		var p = new Process(pjLinkPath,[ip, ProjectorCommand.shutdown]);
 		var response:String = null;
 
-		// trace("send shutdown to : "+ip);
+		if  (KontentumNC.debug)
+			trace("send shutdown to : "+ip);
 		
 		while (response!=null && response!="")
 		{
@@ -473,7 +484,8 @@ class Projector
 					if (onShutdownFailed!=null)
 						onShutdownFailed();
 
-				// trace("response : "+response);
+				if  (KontentumNC.debug)
+					trace("response : "+response);
 			}
 		}
 		
@@ -484,7 +496,8 @@ class Projector
 		var p = new Process(pjLinkPath,[ip, ProjectorCommand.query]);
 		var response:String = "";
 
-		// trace("send query to : "+ip);
+		if  (KontentumNC.debug)
+			trace("send query to : "+ip + " :: "+pjLinkPath);
 
 		while (response==null || response=="")
 		{
@@ -494,7 +507,7 @@ class Projector
 			}
 			catch(err:Dynamic)
 			{
-
+			
 			}
 		}
 		if (response!=null && response!="")
@@ -519,8 +532,10 @@ class Projector
 				if (onQueryFailed!=null)
 					onQueryFailed(response);
 
-			// trace("response : "+response);
+			if  (KontentumNC.debug)
+				trace("response : "+response);
 		}
+		
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
