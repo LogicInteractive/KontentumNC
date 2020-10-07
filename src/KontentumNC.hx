@@ -161,7 +161,7 @@ class KontentumNC
 		var configFile = "";
 		try
 		{
-			trace(configXml);
+			// trace(configXml);
 			configFile = File.getContent(configXml);
 		}
 		catch (e:Dynamic)
@@ -497,8 +497,8 @@ class Projector
 		var p = new Process(pjLinkPath,[ip, ProjectorCommand.query]);
 		var response:String = "";
 
-		if  (KontentumNC.debug)
-			trace("send query to : "+ip + " :: "+pjLinkPath);
+		// if  (KontentumNC.debug)
+			// trace("send query to : "+ip + " :: "+pjLinkPath);
 
 		while (response==null || response=="")
 		{
@@ -533,8 +533,8 @@ class Projector
 				if (onQueryFailed!=null)
 					onQueryFailed(response);
 
-			if  (KontentumNC.debug)
-				trace("response : "+response);
+			// if  (KontentumNC.debug)
+				// trace("response : "+response);
 		}
 		
 	}
