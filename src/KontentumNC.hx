@@ -152,6 +152,7 @@ class KontentumNC
 		var configFile = "";
 		try
 		{
+			trace(Sys.getCwd()+"/"+configXml);
 			configFile = File.getContent(Sys.getCwd()+"/"+configXml);
 		}
 		catch (e:Dynamic)
