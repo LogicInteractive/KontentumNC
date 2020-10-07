@@ -79,7 +79,7 @@ class KontentumNC
 		restPingRelay = settings.config.kontentum.api;
 		apiKey = settings.config.kontentum.apiKey;
 		pingTime = settings.config.kontentum.ping;
-		Projector.pjLinkPath = settings.kontentum.pjl;
+		Projector.pjLinkPath = settings.config.kontentum.pjl;
 		
 		debug = Convert.toBool(settings.config.debug);
 
