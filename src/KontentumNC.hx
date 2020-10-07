@@ -36,12 +36,12 @@ class KontentumNC
 	var magicPacket								: Bytes;
 	var address									: Address;
 	var pingTimer								: Timer;
-	static public var debug									: Bool;
+	static public var debug						: Bool;
 	var settings								: Dynamic;
 
 	var pClientsJson							: String;
 
-	var osName								: String;
+	var osName									: String;
 
 	/////////////////////////////////////////////////////////////////////////////////////
 
@@ -59,7 +59,7 @@ class KontentumNC
 
 		osName = Sys.systemName();
 		if (osName=="Linux")
-			Projector.pjLinkPath = "/home/pi/KontentumNC/bin/pjl";
+			Projector.pjLinkPath = "./pjl";
 		else
 			Projector.pjLinkPath = "pjl";
 
@@ -79,7 +79,8 @@ class KontentumNC
 		restPingRelay = settings.config.kontentum.api;
 		apiKey = settings.config.kontentum.apiKey;
 		pingTime = settings.config.kontentum.ping;
-
+		Projector.pjLinkPath = settings.kontentum.pjl;
+		
 		debug = Convert.toBool(settings.config.debug);
 
 		udpSocket = new UdpSocket();
