@@ -28,6 +28,7 @@ class KontentumNC
 	var restPingRelay							: String 			= "";
 	var apiKey									: String 			= "";
 	var pingTime								: Float 			= 1.0;
+	var offlineTimeoutTime						: Float 			= 1.0;
 
 	public static var httpPingClientRequest		: HttpRequest;
 	var httpPingRelayRequest					: HttpRequest;
@@ -36,12 +37,15 @@ class KontentumNC
 	var magicPacket								: Bytes;
 	var address									: Address;
 	var pingTimer								: Timer;
+	var timeoutTimer							: Timer;
+
 	static public var debug						: Bool;
 	var settings								: Dynamic;
 
 	var pClientsJson							: String;
 
 	var osName									: String;
+	static public var netmode					: Netmode			= Netmode.ONLINE;
 
 	/////////////////////////////////////////////////////////////////////////////////////
 
@@ -95,10 +99,18 @@ class KontentumNC
 
 	function onPing()
 	{
-		if (debug)
-			trace("Pinging server");
+		if (netmode==Netmode.ONLINE)
+		{
+			if (debug)
+				trace("Pinging server");
 
-		httpPingRelayRequest.clone().send();
+			httpPingRelayRequest.clone().send();
+		}
+		else
+		{
+			if (debug)
+				trace("Client offline. Should implement this....");
+		}
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -108,8 +120,13 @@ class KontentumNC
 		if (pingTimer != null)
 			pingTimer.stop();
 
+		offlineTimeoutTime = pingTime*3;
+		timeoutTimer = new Timer(Std.int(offlineTimeoutTime * 1000));
+		timeoutTimer.run = onOfflineTimeout;
+
 		pingTimer = new Timer(Std.int(pingTime * 1000));
 		pingTimer.run = onPing;
+
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -118,6 +135,10 @@ class KontentumNC
 	{
 		if (response.isOK)
 		{
+			netmode = Netmode.ONLINE;
+			timeoutTimer.stop();
+			timeoutTimer.run = onOfflineTimeout;
+
 			var rsp:PingResponse = response.toJson();
 			var newPingTime:Float = rsp.ping;
 
@@ -342,6 +363,13 @@ class KontentumNC
 
 	/////////////////////////////////////////////////////////////////////////////////////
 
+	function onOfflineTimeout()
+	{
+		netmode = Netmode.OFFLINE;	
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////////
+
 	function exitWithError(msg:String)
 	{
 		trace(msg);
@@ -356,6 +384,7 @@ typedef PingResponse =
 {
 	var clients			: Array<PingClient>;
 	var all_clients		: Array<PingClient>;
+	var schedules		: Array<ScheduleItem>;
 	var ping			: Float;
 	var success			: Bool;
 }
@@ -377,6 +406,38 @@ typedef PingClient =
 	var client_type		: ClientType;
 	var ip				: String;
 	var mac				: String;
+}
+
+typedef ScheduleItem =
+{
+	var id				: Int;
+	var app_id			: Int;
+	var group_id		: Int;
+	var always_on		: String;
+	var weekday			: String;
+	var weekend			: String;
+	var mon_start		: String;
+	var mon_stop		: String;
+	var tue_start		: String;
+	var tue_stop		: String;
+	var wed_start		: String;
+	var wed_stop		: String;
+	var thu_start		: String;
+	var thu_stop		: String;
+	var fri_start		: String;
+	var fri_stop		: String;
+	var sat_start		: String;
+	var sat_stop		: String;
+	var sun_start		: String;
+	var sun_stop		: String;
+	var group_name		: String;
+	var exception		: String;
+}
+
+enum Netmode
+{
+	ONLINE;
+	OFFLINE;
 }
 
 enum abstract ProjectorCommand(String) to String
