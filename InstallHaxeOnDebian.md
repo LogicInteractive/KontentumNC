@@ -21,9 +21,9 @@ cd opam
 
 ./configure
 
-make -j4 lib-ext
+make -j 4 lib-ext
 
-make -j4
+make -j 4
 
 sudo make install
 
