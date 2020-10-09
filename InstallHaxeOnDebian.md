@@ -92,8 +92,6 @@ sudo apt-get install libmariadb-dev
 
 cmake neko
 
-cd neko
-
 make
 
 make install
