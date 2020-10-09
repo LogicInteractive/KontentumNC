@@ -2,6 +2,8 @@ Set up Haxe from source on Debian:
 
 sudo apt-get update
 
+sudo apt-get upgrade
+
 sudo apt-get install git
 
 # Install Ocaml / Opam :
@@ -15,6 +17,8 @@ cd setup
 sudo apt-get install m4
 
 sudo apt-get install ocaml
+
+sudo apt-get install bubblewrap
 
 git clone https://github.com/ocaml/opam
 
