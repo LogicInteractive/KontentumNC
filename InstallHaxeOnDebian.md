@@ -93,6 +93,8 @@ cmake neko
 
 make
 
-make install
+sudo make install
 
-sudo cp bin/* /usr/lib/neko
+cd ..
+
+sudo haxelib setup
