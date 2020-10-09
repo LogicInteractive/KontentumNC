@@ -1,5 +1,3 @@
-::::: create : /home/pi/runKNC.sh
-
 #!/bin/bash
 while :
 do
@@ -17,4 +15,4 @@ sudo chmod +x runKNC.sh
 
 ::::: edit : /etc/rc.local
 
-sudo /home/pi/runKNC.sh
+sudo /home/pi/KontentumNC/bin/runKNC.sh
