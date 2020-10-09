@@ -45,7 +45,8 @@ opam switch x.xx.x (switch version if needed)
 
 sudo apt install libpcre3-dev zlib1g-dev
 
-git clone --recursive https://github.com/HaxeFoundation/haxe.git -b 4.14  #(branch eg. '4.1.4')
+
+git clone --recursive https://github.com/HaxeFoundation/haxe.git -b 4.14
 
 sudo chmod -R 777 haxe/
 
