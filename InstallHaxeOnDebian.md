@@ -34,6 +34,8 @@ sudo make install
 
 opam init
 
+eval $(opam env)
+
 opam switch x.xx.x (switch version if needed)
 
 
