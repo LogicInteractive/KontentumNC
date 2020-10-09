@@ -88,6 +88,8 @@ sudo apt-get install gtk+-2.0
 
 sudo apt-get install apache2-dev
 
+sudo apt-get install libmariadb-dev
+
 cmake neko
 
 cd neko
