@@ -74,6 +74,18 @@ git clone https://github.com/HaxeFoundation/neko
 
 sudo apt-get -y install cmake
 
+sudo apt-get install libgc-dev
+
+sudo apt-get install libsqlite3-dev
+
+sudo apt-get install libssl-dev
+
+sudo apt install mariadb-server
+
+sudo mysql_secure_installation
+
+sudo apt-get install gtk+-2.0
+
 cmake neko
 
 cd neko
