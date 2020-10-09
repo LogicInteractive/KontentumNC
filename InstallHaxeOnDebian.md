@@ -1,8 +1,15 @@
 Set up Haxe from source on Debian:
 
 sudo apt-get update
+sudo apt-get install git
 
 # Install Ocaml :
+
+mkdir setup
+
+sudo chmod 777 setup
+
+cd setup
 
 sudo apt-get install m4
 
