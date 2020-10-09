@@ -65,11 +65,14 @@ export HAXE_STD_PATH=/usr/lib/haxe/std
 
 (mkdir/cd folder where you want neko to be stored)
 
+mkdir nekobuild
+
+cd nekobuild
+
+
 git clone https://github.com/HaxeFoundation/neko
 
-mkdir build
-
-cd build
+sudo apt-get -y install cmake
 
 cmake neko
 
