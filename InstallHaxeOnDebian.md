@@ -97,4 +97,4 @@ sudo make install
 
 cd ..
 
-sudo haxelib setup
+haxelib setup
