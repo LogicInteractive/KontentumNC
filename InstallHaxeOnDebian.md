@@ -3,7 +3,7 @@ Set up Haxe from source on Debian:
 sudo apt-get update
 sudo apt-get install git
 
-# Install Ocaml :
+# Install Ocaml / Opam :
 
 mkdir setup
 
