@@ -102,14 +102,19 @@ class KontentumNC
 		if (netmode==Netmode.ONLINE)
 		{
 			if (debug)
+			{
 				trace("Pinging server");
-
+				writeToLog("Pinging server");
+			}
 			httpPingRelayRequest.clone().send();
 		}
 		else
 		{
 			if (debug)
+			{
 				trace("Client offline. Should implement this....");
+				writeToLog("Client offline. Should implement this....");
+			}
 		}
 	}
 
@@ -151,7 +156,10 @@ class KontentumNC
 					pingTime = settings.config.kontentum.ping;
 
 				if (debug)
+				{
 					trace("Setting new ping time: " + newPingTime + " seconds.");
+					writeToLog("Client offline. Should implement this....");
+				}
 
 				startPingTimer();
 			}
@@ -202,8 +210,10 @@ class KontentumNC
 		// var pingClients:Array<ClientInfo> = [];
 
 		if (debug)
+		{
 			trace("Clients: [" + pingClients.length + "]");
-
+			writeToLog("Clients: [" + pingClients.length + "]");
+		}
 		if (pingClients.length == 0)
 			return;
 
@@ -278,7 +288,7 @@ class KontentumNC
 					{
 						Projector.sendPing(pi);
 					}
-				},(err)->trace(err));
+				},(err)->{trace(err);writeToLog(err);});
 			}
 		}		
 
@@ -325,7 +335,10 @@ class KontentumNC
 		Sys.command("wakeonlan", [macAdr]);
 
 		if (debug)
+		{
 			trace("WOL packet sent to " + ip + " [" + macAdr + "]");
+			writeToLog("WOL packet sent to " + ip + " [" + macAdr + "]");
+		}
 	}
 
 	function buildMagicPacket(macAddr:String):Bytes
@@ -373,7 +386,27 @@ class KontentumNC
 	function exitWithError(msg:String)
 	{
 		trace(msg);
+		writeToLog(msg);
 		Sys.exit(1);
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////////
+
+	static public function writeToLog(msg:String)
+	{
+		if (debug==false)
+			return;
+
+		if (msg==null || msg=="")
+			return;
+
+		var logFile:String = "";
+		if (FileSystem.exists("log.txt"))
+			logFile = File.getContent("log.txt");
+
+		logFile+=msg;
+		logFile+="\n";
+		File.saveContent("log.txt",logFile);
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -484,8 +517,10 @@ class Projector
 		var response:String = null;
 
 		if  (KontentumNC.debug)
+		{
 			trace("send wakeup to : "+ip);
-		
+			KontentumNC.writeToLog("send wakeup to : "+ip);
+		}
 		while (response!=null && response!="")
 		{
 			try 
@@ -510,8 +545,10 @@ class Projector
 			}
 
 			if  (KontentumNC.debug)
+			{
 				trace("response : "+response);
-
+				KontentumNC.writeToLog("response : "+response);
+			}
 		}
 		
 	}
@@ -522,8 +559,11 @@ class Projector
 		var response:String = null;
 
 		if  (KontentumNC.debug)
+		{
 			trace("send shutdown to : "+ip);
-		
+			KontentumNC.writeToLog("send shutdown to : "+ip);
+		}
+
 		while (response!=null && response!="")
 		{
 			try 
@@ -547,7 +587,10 @@ class Projector
 						onShutdownFailed();
 
 				if  (KontentumNC.debug)
+				{
 					trace("response : "+response);
+					KontentumNC.writeToLog("response : "+response);
+				}
 			}
 		}
 		
@@ -618,7 +661,10 @@ class Projector
 			// trace("ping client ok");
 		}
 		else
+		{
 			trace("ping client failed!");
+			KontentumNC.writeToLog("ping client failed!");
+		}
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
