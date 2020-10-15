@@ -158,7 +158,7 @@ class KontentumNC
 				if (debug)
 				{
 					trace("Setting new ping time: " + newPingTime + " seconds.");
-					writeToLog("Client offline. Should implement this....");
+					writeToLog("Setting new ping time: " + newPingTime + " seconds.");
 				}
 
 				startPingTimer();
