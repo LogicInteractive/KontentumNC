@@ -2,7 +2,7 @@
 	<kontentum>
 		<ip>https://kontentum.link</ip>
 		<api>/rest/PingRelay</api> 
-		<apiKey>0c8238b9c3349ec6d8dbd4b25939d705</apiKey> 
+		<apiKey>a4d199fcdfdb15778d9682639dd2d9de</apiKey> 
 		<ping>1.0</ping>
 		<offlineTimeout>60.0</offlineTimeout>
 		<pjl>/home/pi/KontentumNC/bin/pjl</pjl>
