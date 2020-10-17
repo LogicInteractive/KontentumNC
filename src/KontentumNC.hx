@@ -150,7 +150,6 @@ class KontentumNC
 			if (newPingTime > 0 && (newPingTime != pingTime))
 			{
 				pingTime = newPingTime;
-				pingTime = 5;
 
 				if (pingTime == 0)
 					pingTime = settings.config.kontentum.ping;
