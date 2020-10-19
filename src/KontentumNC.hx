@@ -104,7 +104,7 @@ class KontentumNC
 			if (debug)
 			{
 				trace("Pinging server");
-				writeToLog("Pinging server");
+				// writeToLog("Pinging server");
 			}
 			httpPingRelayRequest.clone().send();
 		}
@@ -211,7 +211,7 @@ class KontentumNC
 		if (debug)
 		{
 			trace("Clients: [" + pingClients.length + "]");
-			writeToLog("Clients: [" + pingClients.length + "]");
+			// writeToLog("Clients: [" + pingClients.length + "]");
 		}
 		if (pingClients.length == 0)
 			return;
@@ -257,8 +257,7 @@ class KontentumNC
 			var pcj:String = Json.stringify(rsp.all_clients);
 			if (pcj!=pClientsJson)
 			{
-				var lPath:String = Sys.getCwd();
-				File.saveContent(lPath+"/offlineCache",pcj);
+				File.saveContent(appDir+"offlineCache",pcj);
 				pClientsJson = pcj;
 			}
 		}
@@ -400,12 +399,12 @@ class KontentumNC
 			return;
 
 		var logFile:String = "";
-		if (FileSystem.exists("log.txt"))
-			logFile = File.getContent("log.txt");
+		if (FileSystem.exists(appDir+"log.txt"))
+			logFile = File.getContent(appDir+"log.txt");
 
 		logFile+=msg;
 		logFile+="\n";		
-		File.saveContent(Sys.getCwd()+"/log.txt",logFile);
+		File.saveContent(appDir+"log.txt",logFile);
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
