@@ -158,7 +158,7 @@ class KontentumNC
 				if (debug)
 				{
 					trace("Setting new ping time: " + newPingTime + " seconds.");
-					writeToLog("Setting new ping time: " + newPingTime + " seconds.");
+					// writeToLog("Setting new ping time: " + newPingTime + " seconds.");
 				}
 
 				startPingTimer();
@@ -287,7 +287,7 @@ class KontentumNC
 					{
 						Projector.sendPing(pi);
 					}
-				},(err)->{trace(err);writeToLog(err);});
+				},(err)->{trace("projector query failed:"+err);writeToLog("projector query failed:"+err);});
 			}
 		}		
 
@@ -403,6 +403,7 @@ class KontentumNC
 		if (FileSystem.exists(appDir+"log.txt"))
 			logFile = File.getContent(appDir+"log.txt");
 
+		logFile+=Date.now().toString()+"  :  ";
 		logFile+=msg;
 		logFile+="\n";		
 		File.saveContent(appDir+"log.txt",logFile);
