@@ -258,7 +258,7 @@ class KontentumNC
 			if (pcj!=pClientsJson)
 			{
 				var lPath:String = Sys.getCwd();
-				File.saveContent(lPath+"offlineCache",pcj);
+				File.saveContent(lPath+"/offlineCache",pcj);
 				pClientsJson = pcj;
 			}
 		}
@@ -404,8 +404,8 @@ class KontentumNC
 			logFile = File.getContent("log.txt");
 
 		logFile+=msg;
-		logFile+="\n";
-		File.saveContent("log.txt",logFile);
+		logFile+="\n";		
+		File.saveContent(Sys.getCwd()+"/log.txt",logFile);
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
