@@ -46,6 +46,7 @@ class KontentumNC
 
 	var osName									: String;
 	static public var netmode					: Netmode			= Netmode.ONLINE;
+	static public var appDir					: String;
 
 	/////////////////////////////////////////////////////////////////////////////////////
 
@@ -67,7 +68,7 @@ class KontentumNC
 		else
 			Projector.pjLinkPath = "pjl";
 
-		var appDir:String = Sys.programPath().split(".exe").join("");
+		appDir = Sys.programPath().split(".exe").join("");
 		if (appDir.split("KontentumNC").length > 1)
 		{
 			var si:Int = appDir.lastIndexOf("KontentumNC");
