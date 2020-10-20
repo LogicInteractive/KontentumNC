@@ -419,11 +419,12 @@ class KontentumNC
 
 	static public function getLocalIP():String
 	{
-		var p = new Process("hostname",["-I","|","awk","'{print $1}'"]);  //"hostname -I | awk '{print $1}'"
+		var p = new Process("hostname",["-I"]);  //"hostname -I | awk '{print $1}'"
 		var response:String = null;
+		response = p.stdout.readLine();
 
-		while (response!=null && response!="")
-		{
+		//while (response!=null && response!="")
+		//{
 			try 
 			{
 				response = p.stdout.readLine();
@@ -436,8 +437,21 @@ class KontentumNC
 					KontentumNC.writeToLog("Failed to get local ip : "+response);
 				}
 			}
-		}
-		return response;
+			//trace(response);
+			if (response==null || response=="")
+				return response;
+			else
+			{
+				var respSplt:Array<String> = response.split(" ");
+				if (respSplt==null || respSplt.length==0)
+					return null;
+				else if (respSplt.length > 0)
+					return respSplt[0];
+				else
+					return null;
+			}
+		//}
+		//return response;
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
