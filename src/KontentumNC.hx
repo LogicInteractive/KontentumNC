@@ -38,7 +38,8 @@ class KontentumNC
 	var address									: Address;
 	var pingTimer								: Timer;
 	var timeoutTimer							: Timer;
-
+	var localIP									: String			= "";
+	var isFirstPing								: Bool				= true;
 	static public var debug						: Bool;
 	var settings								: Dynamic;
 
@@ -64,7 +65,12 @@ class KontentumNC
 
 		osName = Sys.systemName();
 		if (osName=="Linux")
+		{
 			Projector.pjLinkPath = "./pjl";
+			localIP = getLocalIP();
+			
+			trace("Local IP is :"+localIP);
+		}
 		else
 			Projector.pjLinkPath = "pjl";
 
@@ -91,11 +97,13 @@ class KontentumNC
 		udpSocket = new UdpSocket();
 		// udpSocket.setBroadcast(true);
 
-		httpPingRelayRequest = new HttpRequest({url: kontentumLink + restPingRelay + "/" + apiKey, callback: onHttpResponse});
+		httpPingRelayRequest = new HttpRequest({url: kontentumLink + restPingRelay + "/" + apiKey + "/" + localIP, callback: onHttpResponse});
 		httpPingClientRequest = new HttpRequest({url: kontentumLink});
 
 		startPingTimer();
-		onPing();
+		httpPingRelayRequest.clone().send();
+
+		httpPingRelayRequest.url = new URL(kontentumLink + restPingRelay + "/" + apiKey);
 	}
 
 	function onPing()
@@ -407,6 +415,29 @@ class KontentumNC
 		logFile+=msg;
 		logFile+="\n";		
 		File.saveContent(appDir+"log.txt",logFile);
+	}
+
+	static public function getLocalIP():String
+	{
+		var p = new Process("hostname",["-I","|","awk","'{print $1}'"]);  //"hostname -I | awk '{print $1}'"
+		var response:String = null;
+
+		while (response!=null && response!="")
+		{
+			try 
+			{
+				response = p.stdout.readLine();
+			}
+			catch(err:Dynamic)
+			{
+				if  (KontentumNC.debug)
+				{
+					trace("Failed to get local ip : "+response);
+					KontentumNC.writeToLog("Failed to get local ip : "+response);
+				}
+			}
+		}
+		return response;
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
