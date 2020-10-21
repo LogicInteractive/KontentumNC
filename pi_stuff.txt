@@ -15,4 +15,4 @@ sudo chmod +x runKNC.sh
 
 ::::: edit : /etc/rc.local
 
-sudo /home/pi/KontentumNC/bin/runKNC.sh
+sudo /home/pi/KontentumNC/runKNC.sh
