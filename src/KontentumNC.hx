@@ -295,7 +295,7 @@ class KontentumNC
 					{
 						Projector.sendPing(pi);
 					}
-				},(err)->{trace("projector query failed:"+err);/*writeToLog("projector query failed:"+err);*/});
+				},(err)->{ if (debug) trace("projector query failed:"+err);/*writeToLog("projector query failed:"+err);*/});
 			}
 		}		
 
