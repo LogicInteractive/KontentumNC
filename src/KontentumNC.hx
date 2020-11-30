@@ -24,7 +24,7 @@ import sys.net.UdpSocket;
 
 class KontentumNC
 {
-	static public var buildDate					: Date				= buildDate();
+	static public var buildDate					: Date				= makeBuildDate();
 	public static var kontentumLink				: String			= "";
 	var restPingRelay							: String 			= "";
 	var apiKey									: String 			= "";
@@ -458,7 +458,7 @@ class KontentumNC
 
 	/////////////////////////////////////////////////////////////////////////////////////
 
-    macro public static function buildDate():ExprOf<Date>
+    macro public static function makeBuildDate():ExprOf<Date>
 	{
         var date = Date.now();
         var year = toExpr(date.getFullYear());
