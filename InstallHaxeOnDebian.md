@@ -89,6 +89,8 @@ sudo apt-get install apache2-dev
 
 sudo apt-get install libmariadb-dev
 
+sudo apt-get install -y libmbedtls-dev
+
 cmake neko
 
 make
