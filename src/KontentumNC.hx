@@ -72,7 +72,7 @@ class KontentumNC
 			
 			//var dstr = buildDate.getDate()+"/"+(buildDate.getMonth()+1)+"/"+buildDate.getFullYear()+" "+buildDate.getHours()+":"+buildDate.getMinutes();
 			var dstr = "";
-			Sys.println('Kontentum Client - Logic Interactive | $dstr | $localIP');
+			Sys.println('Kontentum Client :: Logic Interactive | $localIP');
 		}
 		else
 			Projector.pjLinkPath = "pjl";
