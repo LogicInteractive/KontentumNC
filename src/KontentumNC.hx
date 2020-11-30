@@ -24,7 +24,7 @@ import sys.net.UdpSocket;
 
 class KontentumNC
 {
-	static public var buildDate					: Date				= makeBuildDate();
+	//static public var buildDate					: Date				= makeBuildDate();
 	public static var kontentumLink				: String			= "";
 	var restPingRelay							: String 			= "";
 	var apiKey									: String 			= "";
@@ -70,7 +70,8 @@ class KontentumNC
 			Projector.pjLinkPath = "./pjl";
 			localIP = getLocalIP();
 			
-			var dstr = buildDate.getDate()+"/"+(buildDate.getMonth()+1)+"/"+buildDate.getFullYear()+" "+buildDate.getHours()+":"+buildDate.getMinutes();
+			//var dstr = buildDate.getDate()+"/"+(buildDate.getMonth()+1)+"/"+buildDate.getFullYear()+" "+buildDate.getHours()+":"+buildDate.getMinutes();
+			var dstr = "";
 			Sys.println('Kontentum Client - Logic Interactive | $dstr | $localIP');
 		}
 		else
@@ -457,7 +458,7 @@ class KontentumNC
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
-
+/*
     macro public static function makeBuildDate():ExprOf<Date>
 	{
         var date = Date.now();
@@ -469,7 +470,7 @@ class KontentumNC
         var secs = toExpr(date.getSeconds());
         return macro new Date($year, $month, $day, $hours, $mins, $secs);
     }
-
+*/
 	/////////////////////////////////////////////////////////////////////////////////////
 
 }
