@@ -24,6 +24,7 @@ import sys.net.UdpSocket;
 
 class KontentumNC
 {
+	static public var buildDate					: Date				= buildDate();
 	public static var kontentumLink				: String			= "";
 	var restPingRelay							: String 			= "";
 	var apiKey									: String 			= "";
@@ -69,7 +70,8 @@ class KontentumNC
 			Projector.pjLinkPath = "./pjl";
 			localIP = getLocalIP();
 			
-			trace("Local IP is :"+localIP);
+			var dstr = buildDate.getDate()+"/"+(buildDate.getMonth()+1)+"/"+buildDate.getFullYear()+" "+buildDate.getHours()+":"+buildDate.getMinutes();
+			Sys.println('Kontentum Client - Logic Interactive | $dstr | $localIP');
 		}
 		else
 			Projector.pjLinkPath = "pjl";
@@ -453,6 +455,20 @@ class KontentumNC
 		//}
 		//return response;
 	}
+
+	/////////////////////////////////////////////////////////////////////////////////////
+
+    macro public static function buildDate():ExprOf<Date>
+	{
+        var date = Date.now();
+        var year = toExpr(date.getFullYear());
+        var month = toExpr(date.getMonth());
+        var day = toExpr(date.getDate());
+        var hours = toExpr(date.getHours());
+        var mins = toExpr(date.getMinutes());
+        var secs = toExpr(date.getSeconds());
+        return macro new Date($year, $month, $day, $hours, $mins, $secs);
+    }
 
 	/////////////////////////////////////////////////////////////////////////////////////
 
