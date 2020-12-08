@@ -318,7 +318,7 @@ class KontentumNC
 
 	function sendShutdown(pi:PingClient)
 	{
-		pi.ip = "192.168.1.244";
+		// pi.ip = "192.168.1.244";
 		// trace("sending shutdown to.... "+pi.ip);
 		if (pi.client_type==ClientType.projector)
 			Projector.shutdown(pi.ip);
