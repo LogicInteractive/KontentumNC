@@ -3,6 +3,7 @@ package;
 import com.akifox.asynchttp.HttpRequest;
 import com.akifox.asynchttp.HttpResponse;
 import com.akifox.asynchttp.URL;
+import fox.hw.tplink.TPLinkDevice.TPLink_KP105;
 import fox.net.lan.LANScanner;
 import haxe.Json;
 import haxe.Timer;
@@ -67,7 +68,10 @@ class KontentumNC
 
 		var l:LANScanner = new LANScanner();
 		l.pingAllinSubnet("192.168.68");
-		l.traceAll();
+		// l.traceAll();
+		var ip = l.getIPByMAC("28:EE:52:41:31:36");
+		if (ip!=null)
+			TPLink_KP105.toggle(ip);
 
 		return;
 
