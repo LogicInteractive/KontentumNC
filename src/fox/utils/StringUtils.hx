@@ -209,9 +209,9 @@ class StringUtils
 		if (d == null)
 			return d;
 			
-		if (isStringBool(d))
-			return Convert.toBool(d);
-		else if (isStringInt(d))
+		// if (isStringBool(d))
+		// 	return Convert.toBool(d);
+		if (isStringInt(d))
 			return Std.parseInt(d);
 		else if (isStringInt(d))
 			return Std.parseFloat(d);
@@ -455,10 +455,10 @@ class StringUtils
         return (value == null ? nullValue: value);
     }
 	
-    public static function randomChar():String
-    {
-		return String.fromCharCode(MathUtils.getRandomIntInRange(40,140));
-    }
+    // public static function randomChar():String
+    // {
+	// 	return String.fromCharCode(MathUtils.getRandomIntInRange(40,140));
+    // }
 
     inline public static function clipString(input:String, maxChars:Int, postStringIfClipped:String=""):String
     {
