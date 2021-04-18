@@ -70,7 +70,7 @@ class Convert
 		if (value == null)
 			return "";
 			
-		if (Std.is(value, String))
+		if (Std.isOfType(value, String))
 		{
 			if (StringUtils.contains(value,"%"))
 			{
@@ -96,7 +96,7 @@ class Convert
 		if (value == null)
 			return -1;
 			
-		if (Std.is(value, Int))
+		if (Std.isOfType(value, Int))
 		{
 			if (StringUtils.contains(value,"%"))
 			{
@@ -148,7 +148,7 @@ class Convert
 		if (value == null)
 			return 0;
 			
-		if (Std.is(value, String))
+		if (Std.isOfType(value, String))
 		{
 			if (StringUtils.contains(value,"%"))
 			{

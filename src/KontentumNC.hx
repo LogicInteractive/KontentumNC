@@ -3,6 +3,7 @@ package;
 import com.akifox.asynchttp.HttpRequest;
 import com.akifox.asynchttp.HttpResponse;
 import com.akifox.asynchttp.URL;
+import fox.net.lan.LANScanner;
 import haxe.Json;
 import haxe.Timer;
 import haxe.io.Bytes;
@@ -63,6 +64,11 @@ class KontentumNC
 	{
 
 		// Get proper app dir
+
+		var l:LANScanner = new LANScanner();
+		trace(l.traceAll());
+
+		return;
 
 		osName = Sys.systemName();
 		if (osName=="Linux")
