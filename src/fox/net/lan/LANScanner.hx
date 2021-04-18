@@ -32,8 +32,8 @@ class LANScanner
 	{
 		computers.resize(0);
 
-		var bf:Bytes = Bytes.alloc(2048);
-		var p:Process = new Process("arp",["-a"]);
+		var bf:Bytes = Bytes.alloc(4096);
+		var p:Process = new Process("arp",["-n"]);
 
 		var bytesAvailable:Int = 0;
 		while (true)
@@ -72,7 +72,7 @@ class LANScanner
 				}
 			}
 		}
-
+		bf = null;
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////
