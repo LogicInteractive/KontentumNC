@@ -100,7 +100,7 @@ class KontentumNC
 		Projector.pjLinkPath = settings.config.kontentum.pjl;
 		
 		debug = Convert.toBool(settings.config.debug);
-		var subnet:String = Convert.toBool(settings.config.subnet);
+		var subnet:String = settings.config.subnet;
 
 		if (subnet!=null)
 		{
