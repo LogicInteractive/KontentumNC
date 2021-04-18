@@ -1,9 +1,9 @@
 package fox.net.lan;
 
+import fox.utils.StringUtils;
 import haxe.Timer;
-import no.logic.fox.utils.StringUtils;
-import sys.io.Process;
 import haxe.io.Bytes;
+import sys.io.Process;
 
 class LANScanner
 {
