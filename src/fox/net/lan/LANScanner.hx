@@ -198,6 +198,13 @@ class LANScanner
 
 	/////////////////////////////////////////////////////////////////////////////////////////
 
+	public function pingAllinSubnet(ipSub:String="192.168.1.")
+	{
+		Sys.command('echo $(seq 254) | xargs -P255 -I% -d" " ping -W 1 -c 1 $ipSub.% | grep -E "[0-1].*?:"');
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////////////
+
 	public function traceAll()
 	{
 		for (i in computers)

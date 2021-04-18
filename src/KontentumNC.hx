@@ -66,6 +66,8 @@ class KontentumNC
 		// Get proper app dir
 
 		var l:LANScanner = new LANScanner();
+		l.pingAllinSubnet("192.168.1.");
+		Sys.sleep(5);
 		l.traceAll();
 
 		return;
