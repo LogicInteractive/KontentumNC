@@ -51,7 +51,7 @@ class LANScanner
 			var ot:String = bf.toString();
 			if (ot!=null)
 			{
-				var aList:Array<String> = ot.split("\r");
+				var aList:Array<String> = ot.split("\n");
 				for (l in aList)
 				{
 					l = StringUtils.remove(l, ["(",")","on","at","[ether]"]);
@@ -200,7 +200,7 @@ class LANScanner
 
 	public function pingAllinSubnet(ipSub:String="192.168.68")
 	{
-		Sys.command('echo $(seq 254) | xargs -P255 -I% -d" " ping -W 1 -c 1 $ipSub.% | grep -E "[0-1].*?:"');
+		Sys.command('echo $(seq 254) | xargs -P255 -I% -d" " ping -q -W 1 -c 1 $ipSub.% | grep -E "[0-1].*?:"');
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////

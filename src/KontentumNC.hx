@@ -67,7 +67,6 @@ class KontentumNC
 
 		var l:LANScanner = new LANScanner();
 		l.pingAllinSubnet("192.168.68");
-		Sys.sleep(3);
 		l.traceAll();
 
 		return;
