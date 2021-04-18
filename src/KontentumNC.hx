@@ -52,6 +52,8 @@ class KontentumNC
 	static public var netmode					: Netmode			= Netmode.ONLINE;
 	static public var appDir					: String;
 
+	var lanScanner								: LANScanner;
+
 	/////////////////////////////////////////////////////////////////////////////////////
 
 	static function main()
@@ -65,15 +67,6 @@ class KontentumNC
 	{
 
 		// Get proper app dir
-
-		var l:LANScanner = new LANScanner();
-		l.pingAllinSubnet("192.168.68");
-		// l.traceAll();
-		var ip = l.getIPByMAC("28:EE:52:41:31:36");
-		if (ip!=null)
-			TPLink_KP105.toggle(ip);
-
-		return;
 
 		osName = Sys.systemName();
 		if (osName=="Linux")
@@ -107,6 +100,20 @@ class KontentumNC
 		Projector.pjLinkPath = settings.config.kontentum.pjl;
 		
 		debug = Convert.toBool(settings.config.debug);
+		var subnet:String = Convert.toBool(settings.config.subnet);
+
+		if (subnet!=null)
+		{
+			lanScanner = new LANScanner();
+			lanScanner.pingAllinSubnet(subnet);
+			// l.traceAll();
+			var ip = lanScanner.getIPByMAC("28:EE:52:41:31:36");
+			if (ip!=null)
+				TPLink_KP105.toggle(ip);
+		}
+		return;
+
+
 
 		udpSocket = new UdpSocket();
 		// udpSocket.setBroadcast(true);

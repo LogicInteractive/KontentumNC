@@ -63,7 +63,7 @@ class TPLinkKasa
 		var success:Bool = false;
 		try
 		{
-			socket.setTimeout(1);
+			socket.setTimeout(3);
 			// socket.setBlocking(false);
 			// socket.setFastSend(true);
 			socket.connect(new Host(ip), port);

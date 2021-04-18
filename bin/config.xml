@@ -8,4 +8,5 @@
 		<pjl>/home/pi/KontentumNC/bin/pjl</pjl>
 	</kontentum>
 	<debug>true</debug>
+	<subnet>192.168.68</subnet>
 </config>
