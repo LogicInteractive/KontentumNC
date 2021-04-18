@@ -66,7 +66,7 @@ class KontentumNC
 		// Get proper app dir
 
 		var l:LANScanner = new LANScanner();
-		trace(l.traceAll());
+		l.traceAll();
 
 		return;
 
