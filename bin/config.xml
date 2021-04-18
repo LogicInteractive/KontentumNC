@@ -1,7 +1,7 @@
 <config>
 	<kontentum>
 		<ip>https://kontentum.link</ip>
-		<api>/rest/PingRelay</api> 
+		<api>/rest/pingRelay</api> 
 		<apiKey>0c8238b9c3349ec6d8dbd4b25939d705</apiKey> 
 		<ping>30.0</ping>
 		<offlineTimeout>60.0</offlineTimeout>
