@@ -100,7 +100,7 @@ class KontentumNC
 		
 		debug = Convert.toBool(settings.config.debug);
 
-		var subnet:String = LANScanner.getSubnetFromIP(localIP)
+		var subnet:String = LANScanner.getSubnetFromIP(localIP);
 		if (subnet!=null)
 		{
 			LANScanner.init(true,60*30);
