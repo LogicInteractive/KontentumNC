@@ -9,6 +9,9 @@ class LANScanner
 {
 	/////////////////////////////////////////////////////////////////////////////////////////
 
+	static public var i			: LANScanner;
+	static public var active	: Bool					= false;
+
 	public var computers		: Array<ARPItem> 		= [];
 	var updateTimer				: Timer;
 
@@ -209,6 +212,22 @@ class LANScanner
 	{
 		for (i in computers)
 			trace('ip:'+i.ip+'\t\tmac:'+i.mac+'\t'+(i.isDynamic==null?'':i.isDynamic?'dynamic':'static'));
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////////////
+
+	static public function getSubnetFromIP(ip:String)
+	{
+		return ip.substr(0,ip.lastIndexOf("."));	
+	}
+
+	static public function init(?scanOnInit:Bool=true,?autoUpdateIntervalInSec:Float=0)
+	{
+		if (i==null)
+		{
+			i = new LANScanner(scanOnInit,autoUpdateIntervalInSec);
+			active = true;
+		}
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////

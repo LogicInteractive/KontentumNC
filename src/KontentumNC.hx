@@ -4,6 +4,7 @@ import com.akifox.asynchttp.HttpRequest;
 import com.akifox.asynchttp.HttpResponse;
 import com.akifox.asynchttp.URL;
 import fox.hw.tplink.TPLinkDevice.TPLink_KP105;
+import fox.hw.tplink.TPLinkKasa.TPLinkKasaResponseData;
 import fox.net.lan.LANScanner;
 import haxe.Json;
 import haxe.Timer;
@@ -52,8 +53,6 @@ class KontentumNC
 	static public var netmode					: Netmode			= Netmode.ONLINE;
 	static public var appDir					: String;
 
-	var lanScanner								: LANScanner;
-
 	/////////////////////////////////////////////////////////////////////////////////////
 
 	static function main()
@@ -100,16 +99,16 @@ class KontentumNC
 		Projector.pjLinkPath = settings.config.kontentum.pjl;
 		
 		debug = Convert.toBool(settings.config.debug);
-		var subnet:String = settings.config.subnet;
 
+		var subnet:String = LANScanner.getSubnetFromIP(localIP)
 		if (subnet!=null)
 		{
-			lanScanner = new LANScanner();
-			lanScanner.pingAllinSubnet(subnet);
+			LANScanner.init(true,60*30);
+			LANScanner.i.pingAllinSubnet(subnet);
 			// l.traceAll();
-			var ip = lanScanner.getIPByMAC("28:EE:52:41:31:36");
-			if (ip!=null)
-				TPLink_KP105.toggle(ip);
+			// var ip = lanScanner.getIPByMAC("28:EE:52:41:31:36");
+			// if (ip!=null)
+			// 	TPLink_KP105.toggle(ip);
 		}
 		return;
 
@@ -302,6 +301,28 @@ class KontentumNC
 	function processAllClients(pingClients:Array<PingClient>)
 	{
 		sendPingFromProjectorsThatAreOn(pingClients);
+		sendPingFromSmartPlugsThatAreOn(pingClients);
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////////
+
+	function sendPingFromSmartPlugsThatAreOn(pingClients:Array<PingClient>)
+	{
+		for (pi in pingClients)
+		{
+			if (pi.client_type==ClientType.smartplug)
+			{
+				if (SmartPlug.isOn(pi.mac))
+				{
+					var newIp:String = LANScanner.i.getIPByMAC(pi.mac);
+					if (newIp!=null)
+						pi.ip = newIp;
+						
+					KontentumNC.sendEmulatedPing(pi);
+				}
+			}
+		}		
+
 	}
 
 	function sendPingFromProjectorsThatAreOn(pingClients:Array<PingClient>)
@@ -314,10 +335,11 @@ class KontentumNC
 				{
 					if (isOn)
 					{
-						Projector.sendPing(pi);
+						KontentumNC.sendEmulatedPing(pi);
 					}
 				},(err)->{ if (debug) trace("projector query failed:"+err);/*writeToLog("projector query failed:"+err);*/});
 			}
+
 		}		
 
 	}
@@ -330,6 +352,8 @@ class KontentumNC
 
 		if (pi.client_type==ClientType.projector)
 			Projector.startup(pi.ip);
+		else if (pi.client_type==ClientType.smartplug)
+			SmartPlug.startup(pi.mac);
 		else if (pi.client_type==ClientType.computer)
 			sendMagicPacket(pi.ip, pi.mac);
 	}
@@ -340,6 +364,8 @@ class KontentumNC
 		// trace("sending shutdown to.... "+pi.ip);
 		if (pi.client_type==ClientType.projector)
 			Projector.shutdown(pi.ip);
+		else if (pi.client_type==ClientType.smartplug)
+			SmartPlug.shutdown(pi.mac);
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -476,6 +502,30 @@ class KontentumNC
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
+
+	static public function sendEmulatedPing(pi:PingClient)
+	{
+		// trace("ping projector:"+pi.ip);
+		var req = KontentumNC.httpPingClientRequest.clone();
+		req.url = new URL(KontentumNC.kontentumLink+"/rest/pingClient/"+pi.id+"/_/"+pi.ip);
+		req.callback = onPingClientResponse;
+		req.send();
+	}	
+
+	static function onPingClientResponse(response:HttpResponse)
+	{
+		if (response!=null && response.isOK)
+		{
+			// trace("ping client ok");
+		}
+		else
+		{
+			trace("ping client failed!");
+			KontentumNC.writeToLog("ping client failed!");
+		}
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////////
 /*
     macro public static function makeBuildDate():ExprOf<Date>
 	{
@@ -583,6 +633,7 @@ enum abstract ClientType(String) to String
 {
 	var computer		= "cmp";	
 	var projector		= "prj";	
+	var smartplug		= "spp";	
 }
 
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -724,27 +775,71 @@ class Projector
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
+}
 
-	static public function sendPing(pi:PingClient)
+class SmartPlug
+{
+	static public function startup(mac:String):Bool
 	{
-		// trace("ping projector:"+pi.ip);
-		var req = KontentumNC.httpPingClientRequest.clone();
-		req.url = new URL(KontentumNC.kontentumLink+"/rest/pingClient/"+pi.id+"/_/"+pi.ip);
-		req.callback = onPingClientResponse;
-		req.send();
-	}	
+		if (!LANScanner.active)
+			return false;
 
-	static function onPingClientResponse(response:HttpResponse)
+		var ip = LANScanner.i.getIPByMAC(mac);
+		if (ip!=null)
+		{
+			var res:TPLinkKasaResponseData = TPLink_KP105.turnOn(ip);
+			return parseCheckIsOn(res)==true;
+		}
+
+		return false;
+	}
+	
+	static public function shutdown(mac:String):Bool
 	{
-		if (response!=null && response.isOK)
+		if (!LANScanner.active)
+			return false;
+
+		var ip = LANScanner.i.getIPByMAC(mac);
+		if (ip!=null)
 		{
-			// trace("ping client ok");
+			var res:TPLinkKasaResponseData = TPLink_KP105.turnOff(ip);
+			return parseCheckIsOn(res)==false;
 		}
-		else
+
+		return false;
+	}
+	
+	static public function 
+	isOn(mac:String):Bool
+	{
+		if (!LANScanner.active)
+			return false;
+
+		var ip = LANScanner.i.getIPByMAC(mac);
+		if (ip!=null)
 		{
-			trace("ping client failed!");
-			KontentumNC.writeToLog("ping client failed!");
+			var res:TPLinkKasaResponseData = TPLink_KP105.getStatus(ip);
+			return parseCheckIsOn(res);
 		}
+
+		return false;		
+	}
+
+	static function parseCheckIsOn(rd:TPLinkKasaResponseData):Bool
+	{
+		if (rd==null)
+			return false;
+
+		var isOn:Bool = false;
+		try
+		{
+			isOn = rd.system.get_sysinfo.relay_state==1;
+		}
+		catch(e:Dynamic)
+		{
+			//...
+		}
+		return isOn;	
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
