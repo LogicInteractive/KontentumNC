@@ -101,6 +101,7 @@ class KontentumNC
 		debug = Convert.toBool(settings.config.debug);
 
 		var subnet:String = LANScanner.getSubnetFromIP(localIP);
+		trace(subnet);
 		if (subnet!=null)
 		{
 			LANScanner.init(true,60*30);
@@ -110,9 +111,6 @@ class KontentumNC
 			// if (ip!=null)
 			// 	TPLink_KP105.toggle(ip);
 		}
-		return;
-
-
 
 		udpSocket = new UdpSocket();
 		// udpSocket.setBroadcast(true);
@@ -154,13 +152,14 @@ class KontentumNC
 		if (pingTimer != null)
 			pingTimer.stop();
 
+		if (timeoutTimer != null)
+			timeoutTimer.stop();
+
 		offlineTimeoutTime = pingTime*3;
 		timeoutTimer = new Timer(Std.int(offlineTimeoutTime * 1000));
 		timeoutTimer.run = onOfflineTimeout;
-
 		pingTimer = new Timer(Std.int(pingTime * 1000));
 		pingTimer.run = onPing;
-
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -188,11 +187,9 @@ class KontentumNC
 					trace("Setting new ping time: " + newPingTime + " seconds.");
 					// writeToLog("Setting new ping time: " + newPingTime + " seconds.");
 				}
-
-				startPingTimer();
+				//startPingTimer();
 			}
 
-			// trace(rsp);
 			processClientList(rsp.clients);
 
 			if (rsp.all_clients!=null)
@@ -308,8 +305,11 @@ class KontentumNC
 
 	function sendPingFromSmartPlugsThatAreOn(pingClients:Array<PingClient>)
 	{
+
 		for (pi in pingClients)
 		{
+//			trace(pi);
+
 			if (pi.client_type==ClientType.smartplug)
 			{
 				if (SmartPlug.isOn(pi.mac))
@@ -321,6 +321,7 @@ class KontentumNC
 					KontentumNC.sendEmulatedPing(pi);
 				}
 			}
+
 		}		
 
 	}
@@ -788,7 +789,8 @@ class SmartPlug
 		if (ip!=null)
 		{
 			var res:TPLinkKasaResponseData = TPLink_KP105.turnOn(ip);
-			return parseCheckIsOn(res)==true;
+			var isit:Bool = parseCheckIsOn(res);
+			return isit==true;
 		}
 
 		return false;
@@ -798,6 +800,8 @@ class SmartPlug
 	{
 		if (!LANScanner.active)
 			return false;
+
+		LANScanner.i.traceAll();
 
 		var ip = LANScanner.i.getIPByMAC(mac);
 		if (ip!=null)
@@ -809,8 +813,7 @@ class SmartPlug
 		return false;
 	}
 	
-	static public function 
-	isOn(mac:String):Bool
+	static public function isOn(mac:String):Bool
 	{
 		if (!LANScanner.active)
 			return false;

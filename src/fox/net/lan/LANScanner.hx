@@ -61,6 +61,7 @@ class LANScanner
 					var sto:String = StringUtils.truncateSpace(l,"|");
 					if (sto!=null)
 					{
+						trace(sto);
 						var ai:ARPItem = {ip:findIPfromString(sto,"|"),mac:findMACfromString(sto,"|"),isDynamic:findIsDynamicfromString(sto,"|"),name:findNamefromString(sto,"|")};
 						if (ai.mac!=null)
 							ai.mac=ai.mac.toLowerCase().split("-").join(":");
@@ -76,6 +77,7 @@ class LANScanner
 			}
 		}
 		bf = null;
+
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////
@@ -210,6 +212,9 @@ class LANScanner
 
 	public function traceAll()
 	{
+		if (computers==null)
+			return;
+
 		for (i in computers)
 			trace('ip:'+i.ip+'\t\tmac:'+i.mac+'\t'+(i.isDynamic==null?'':i.isDynamic?'dynamic':'static'));
 	}

@@ -3,3 +3,6 @@
 -main KontentumNC
 --times
 
+-D HXCPP_STACK_TRACE
+-D HXCPP_STACK_LINE
+-D HXCPP_CHECK_POINTER

@@ -13,6 +13,18 @@
 #define HXCPP_VISIT_ALLOCS 
 #endif
 
+#if !defined(HXCPP_CHECK_POINTER) && !defined(NO_HXCPP_CHECK_POINTER)
+#define HXCPP_CHECK_POINTER 
+#endif
+
+#if !defined(HXCPP_STACK_TRACE) && !defined(NO_HXCPP_STACK_TRACE)
+#define HXCPP_STACK_TRACE 
+#endif
+
+#if !defined(HXCPP_STACK_LINE) && !defined(NO_HXCPP_STACK_LINE)
+#define HXCPP_STACK_LINE 
+#endif
+
 #if !defined(HX_SMART_STRINGS) && !defined(NO_HX_SMART_STRINGS)
 #define HX_SMART_STRINGS 
 #endif
