@@ -101,7 +101,6 @@ class KontentumNC
 		debug = Convert.toBool(settings.config.debug);
 
 		var subnet:String = LANScanner.getSubnetFromIP(localIP);
-		trace(subnet);
 		if (subnet!=null)
 		{
 			LANScanner.init(true,60*30);
@@ -298,7 +297,7 @@ class KontentumNC
 	function processAllClients(pingClients:Array<PingClient>)
 	{
 		sendPingFromProjectorsThatAreOn(pingClients);
-		sendPingFromSmartPlugsThatAreOn(pingClients);
+		// sendPingFromSmartPlugsThatAreOn(pingClients);
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -352,11 +351,26 @@ class KontentumNC
 		// trace("sending wakeup to:"+pi.ip);
 
 		if (pi.client_type==ClientType.projector)
-			Projector.startup(pi.ip);
+		{
+			if (pi.startup_delay>=0)
+				Timer.delay(()->Projector.startup(pi.ip),pi.startup_delay*1000);
+			else
+				Projector.startup(pi.ip);
+		}
 		else if (pi.client_type==ClientType.smartplug)
-			SmartPlug.startup(pi.mac);
+		{
+			if (pi.startup_delay>=0)
+				Timer.delay(()->SmartPlug.startup(pi.mac),pi.startup_delay*1000);
+			else
+				SmartPlug.startup(pi.mac);
+		}
 		else if (pi.client_type==ClientType.computer)
-			sendMagicPacket(pi.ip, pi.mac);
+		{
+			if (pi.startup_delay>=0)
+				Timer.delay(()->sendMagicPacket(pi.ip, pi.mac),pi.startup_delay*1000);
+			else
+				sendMagicPacket(pi.ip, pi.mac);
+		}
 	}
 
 	function sendShutdown(pi:PingClient)
@@ -570,6 +584,7 @@ typedef PingClient =
 	var client_type		: ClientType;
 	var ip				: String;
 	var mac				: String;
+	var startup_delay	: Int;
 }
 
 typedef ScheduleItem =
@@ -643,7 +658,7 @@ class Projector
 {
 	static public var pjLinkPath		: String;
 
-	static public function startup(ip:String,?onStartupComplete:()->Void,?onStartupFailed:()->Void)
+	static public function startup(ip:String,?onStartupComplete:()->Void,?onStartupFailed:()->Void,delay:Float=0)
 	{
 		var p = new Process(pjLinkPath,[ip, ProjectorCommand.startup]);
 		var response:String = null;
@@ -782,6 +797,8 @@ class SmartPlug
 {
 	static public function startup(mac:String):Bool
 	{
+		return false;
+
 		if (!LANScanner.active)
 			return false;
 
@@ -798,6 +815,8 @@ class SmartPlug
 	
 	static public function shutdown(mac:String):Bool
 	{
+		return false;
+
 		if (!LANScanner.active)
 			return false;
 
@@ -815,6 +834,8 @@ class SmartPlug
 	
 	static public function isOn(mac:String):Bool
 	{
+		return false;
+
 		if (!LANScanner.active)
 			return false;
 
