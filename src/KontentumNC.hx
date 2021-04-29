@@ -352,21 +352,21 @@ class KontentumNC
 
 		if (pi.client_type==ClientType.projector)
 		{
-			if (pi.startup_delay>=0)
+			if (pi.startup_delay>0)
 				Timer.delay(()->Projector.startup(pi.ip),pi.startup_delay*1000);
 			else
 				Projector.startup(pi.ip);
 		}
 		else if (pi.client_type==ClientType.smartplug)
 		{
-			if (pi.startup_delay>=0)
+			if (pi.startup_delay>0)
 				Timer.delay(()->SmartPlug.startup(pi.mac),pi.startup_delay*1000);
 			else
 				SmartPlug.startup(pi.mac);
 		}
 		else if (pi.client_type==ClientType.computer)
 		{
-			if (pi.startup_delay>=0)
+			if (pi.startup_delay>0)
 				Timer.delay(()->sendMagicPacket(pi.ip, pi.mac),pi.startup_delay*1000);
 			else
 				sendMagicPacket(pi.ip, pi.mac);
