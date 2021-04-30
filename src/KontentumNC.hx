@@ -253,6 +253,7 @@ class KontentumNC
 			{
 				var tip:String = LANScanner.i.getIPByMAC(pingClients[i].mac);
 				trace(tip,pingClients[i].mac);
+
 				if (tip!=null && tip!="")
 					pingClients[i].ip = tip;
 			}
@@ -262,6 +263,8 @@ class KontentumNC
 		{
 			sendCommandToClient(pingClients[i]);
 		}
+
+		LANScanner.i.traceAll();
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
