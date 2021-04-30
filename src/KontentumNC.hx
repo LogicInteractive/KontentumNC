@@ -106,8 +106,8 @@ class KontentumNC
 		{
 			LANScanner.init(true,60*30);
 			LANScanner.i.pingAllinSubnet(subnet);
-			// l.traceAll();
-			// var ip = lanScanner.getIPByMAC("28:EE:52:41:31:36");
+			//LANScanner.i.traceAll();
+			//var ip = LANScanner.i.getIPByMAC("00:50:41:8e:26:21");
 			// if (ip!=null)
 			// 	TPLink_KP105.toggle(ip);
 		}
@@ -400,10 +400,11 @@ class KontentumNC
 
 		if (pi.client_type==ClientType.projector)
 		{
-			if (pi.startup_delay>0)
-				Timer.delay(()->Projector.startup(pi.mac),pi.startup_delay*1000);
-			else
-				Projector.startup(pi.mac);
+			//if (pi.startup_delay>0)
+			//	Timer.delay(()->Projector.startup(pi.mac),pi.startup_delay*1000);
+			//else
+			trace("wakeup projector : ",pi.mac,pi.ip);
+			Projector.startup(pi.mac);
 		}
 /*		else if (pi.client_type==ClientType.smartplug)
 		{
@@ -588,9 +589,11 @@ class KontentumNC
 
 	static public function sendEmulatedPing(pi:PingClient)
 	{
-		// trace("ping projector:"+pi.ip);
+		trace("ping projector:"+pi);
+		var sendURL:String = KontentumNC.kontentumLink+"/rest/pingClient/"+pi.id+"/_/"+pi.ip;
+		trace(sendURL);
 		var req = KontentumNC.httpPingClientRequest.clone();
-		req.url = new URL(KontentumNC.kontentumLink+"/rest/pingClient/"+pi.id+"/_/"+pi.ip);
+		req.url = new URL(sendURL);
 		req.callback = onPingClientResponse;
 		req.send();
 	}	
