@@ -184,12 +184,13 @@ class KontentumNC
 
 				if (debug)
 				{
-					trace("Setting new ping time: " + newPingTime + " seconds.");
+				//	trace("Setting new ping time: " + newPingTime + " seconds.");
 					// writeToLog("Setting new ping time: " + newPingTime + " seconds.");
 				}
 				//startPingTimer();
 			}
 
+			checkDelayedActions();
 			processClientList(rsp.clients);
 
 			if (rsp.all_clients!=null)
@@ -248,8 +249,6 @@ class KontentumNC
 				pingClients[i].mac=pingClients[i].mac.toUpperCase();
 		}
 
-		checkDelayedActions();
-
 		for (i in 0...pingClients.length)
 		{
 			sendCommandToClient(pingClients[i]);
@@ -299,15 +298,19 @@ class KontentumNC
 
 	function checkDelayedActions()
 	{
+		if (delayedActions.length==0)
+			return;
+
 		var sNow:Int = Std.int(Timer.stamp()*1000);
 
 		for (di in 0...delayedActions.length)
 		{
 			var wa:WakeupAction = delayedActions[di];
 			if (wa!=null)
-			{
+			{	
+				var wda:Int = wa.delay*1000;
 				var d:Int = sNow-wa.timestamp;
-				if (d>=wa.delay)
+				if (d>=wda)
 				{
 					executeDelayedAction(wa);
 					delayedActions[di]=null;
@@ -324,15 +327,15 @@ class KontentumNC
 
 	function executeDelayedAction(wa:WakeupAction)
 	{
-		if (wa.type = ClientType.projector)
+		if (wa.type == ClientType.projector)
 		{
 			Projector.startup(wa.mac);
 		}
-		else if (wa.type = ClientType.computer)
+		else if (wa.type == ClientType.computer)
 		{
 			sendMagicPacket(wa.ip, wa.mac);	
 		}
-		// else if (wa.type = ClientType.smartplug)
+		// else if (wa.type == ClientType.smartplug)
 		// {
 		// 	SmartPlug.startup(pi.mac);
 		// }
@@ -413,19 +416,17 @@ class KontentumNC
 		{
 			if (pi.startup_delay>0)
 			{
-				trace("delay: "+pi.startup_delay);
 				delayedActions.push({
 					ip: pi.ip,
 					mac: pi.mac,
 					type: pi.client_type,
 					delay: pi.startup_delay,
-					timestamp: Std.int(Timer.stamp()*1000);
+					timestamp: Std.int(Timer.stamp()*1000)
 				});
 			}
 			else
 				sendMagicPacket(pi.ip, pi.mac);
 		}
-		trace("done" +pi.mac);
 	}
 
 	function sendShutdown(pi:PingClient)
@@ -437,7 +438,7 @@ class KontentumNC
 		/*else if (pi.client_type==ClientType.smartplug)
 			SmartPlug.shutdown(pi.mac);*/
 	}
-
+/*
 	@:keep
 	function delayedWOL()
 	{
@@ -449,7 +450,7 @@ class KontentumNC
 	var delayedWOL_ip:String;
 	var delayedWOL_mac:String;
 	var delayedWOL_timer:Timer;
-
+*/
 	/////////////////////////////////////////////////////////////////////////////////////
 
 	function sendMagicPacket(ip:String, macAdr:String) {
