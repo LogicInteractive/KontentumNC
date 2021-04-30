@@ -251,6 +251,7 @@ class KontentumNC
 			if (LANScanner.i!=null)
 			{
 				var tip:String = LANScanner.i.getIPByMAC(pingClients[i].mac);
+				trace(tip,pingClients[i].mac);
 				if (tip!=null && tip!="")
 					pingClients[i].ip = tip;
 			}
