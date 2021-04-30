@@ -390,6 +390,15 @@ class KontentumNC
 	{
 		for (pi in pingClients)
 		{
+			if (LANScanner.i!=null)
+			{
+				var tip:String = LANScanner.i.getIPByMAC(pi.mac);
+				trace(tip,pi.mac);
+
+				if (tip!=null && tip!="")
+					pi.ip = tip;
+			}
+
 			if (pi.client_type==ClientType.projector)
 			{
 				Projector.query(pi.ip, (isOn:Bool)->
