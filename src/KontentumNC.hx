@@ -252,8 +252,6 @@ class KontentumNC
 			if (LANScanner.i!=null)
 			{
 				var tip:String = LANScanner.i.getIPByMAC(pingClients[i].mac);
-				trace(tip,pingClients[i].mac);
-
 				if (tip!=null && tip!="")
 					pingClients[i].ip = tip;
 			}
@@ -263,8 +261,6 @@ class KontentumNC
 		{
 			sendCommandToClient(pingClients[i]);
 		}
-
-		LANScanner.i.traceAll();
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -399,8 +395,6 @@ class KontentumNC
 			if (LANScanner.i!=null)
 			{
 				var tip:String = LANScanner.i.getIPByMAC(pi.mac);
-				trace(tip,pi.mac);
-
 				if (tip!=null && tip!="")
 					pi.ip = tip;
 			}
@@ -617,7 +611,6 @@ class KontentumNC
 	static public function sendEmulatedPing(pi:PingClient)
 	{
 		var sendURL:String = KontentumNC.kontentumLink+"/rest/pingClient/"+pi.id+"/_/"+pi.ip;
-		trace(sendURL);
 		var req = KontentumNC.httpPingClientRequest.clone();
 		req.url = new URL(sendURL);
 		req.callback = onPingClientResponse;
