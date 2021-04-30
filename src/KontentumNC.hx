@@ -387,7 +387,7 @@ class KontentumNC
 		{
 			if (pi.client_type==ClientType.projector)
 			{
-				Projector.query(pi.mac, (isOn:Bool)->
+				Projector.query(pi.ip, (isOn:Bool)->
 				{
 					if (isOn)
 					{
