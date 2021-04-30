@@ -48,6 +48,7 @@ class KontentumNC
 	var settings								: Dynamic;
 
 	var pClientsJson							: String;
+	var delayedActions							: Array<WakeupAction> = [];
 
 	var osName									: String;
 	static public var netmode					: Netmode			= Netmode.ONLINE;
@@ -247,6 +248,8 @@ class KontentumNC
 				pingClients[i].mac=pingClients[i].mac.toUpperCase();
 		}
 
+		checkDelayedActions();
+
 		for (i in 0...pingClients.length)
 		{
 			sendCommandToClient(pingClients[i]);
@@ -292,6 +295,49 @@ class KontentumNC
 		}
 	}
 	
+	/////////////////////////////////////////////////////////////////////////////////////
+
+	function checkDelayedActions()
+	{
+		var sNow:Int = Std.int(Timer.stamp()*1000);
+
+		for (di in 0...delayedActions.length)
+		{
+			var wa:WakeupAction = delayedActions[di];
+			if (wa!=null)
+			{
+				var d:Int = sNow-wa.timestamp;
+				if (d>=wa.delay)
+				{
+					executeDelayedAction(wa);
+					delayedActions[di]=null;
+				}
+			}
+		}
+
+		for (dr in 0...delayedActions.length)
+		{
+			if (delayedActions[dr]==null)
+				delayedActions.splice(dr,1);
+		}
+	}
+
+	function executeDelayedAction(wa:WakeupAction)
+	{
+		if (wa.type = ClientType.projector)
+		{
+			Projector.startup(wa.mac);
+		}
+		else if (wa.type = ClientType.computer)
+		{
+			sendMagicPacket(wa.ip, wa.mac);	
+		}
+		// else if (wa.type = ClientType.smartplug)
+		// {
+		// 	SmartPlug.startup(pi.mac);
+		// }
+	}
+
 	/////////////////////////////////////////////////////////////////////////////////////
 
 	function processAllClients(pingClients:Array<PingClient>)
@@ -368,11 +414,13 @@ class KontentumNC
 			if (pi.startup_delay>0)
 			{
 				trace("delay: "+pi.startup_delay);
-				delayedWOL_ip = pi.ip;
-				delayedWOL_mac = pi.mac;
-				//delayedWOL_timer = new Timer(1000);
-				//delayedWOL_timer.run = delayedWOL;
-				delayedWOL();
+				delayedActions.push({
+					ip: pi.ip,
+					mac: pi.mac,
+					type: pi.client_type,
+					delay: pi.startup_delay,
+					timestamp: Std.int(Timer.stamp()*1000);
+				});
 			}
 			else
 				sendMagicPacket(pi.ip, pi.mac);
@@ -630,6 +678,15 @@ typedef ScheduleItem =
 	var sun_stop		: String;
 	var group_name		: String;
 	var exception		: String;
+}
+
+typedef WakeupAction = 
+{
+	var ip				: String;
+	var mac				: String;
+	var delay			: Int;
+	var timestamp		: Int;
+	var type			: ClientType;
 }
 
 enum Netmode
