@@ -247,7 +247,7 @@ class KontentumNC
 		for (i in 0...pingClients.length)
 		{
 			if (pingClients[i].mac!=null)
-				pingClients[i].mac=pingClients[i].mac.toUpperCase();
+				pingClients[i].mac=pingClients[i].mac.toLowerCase();
 
 			if (LANScanner.i!=null)
 			{
