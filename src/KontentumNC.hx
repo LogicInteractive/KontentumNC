@@ -355,7 +355,7 @@ class KontentumNC
 			if (pi.startup_delay>0)
 				Timer.delay(()->Projector.startup(pi.mac),pi.startup_delay*1000);
 			else
-				Projector.startup(pi.ip);
+				Projector.startup(pi.mac);
 		}
 		else if (pi.client_type==ClientType.smartplug)
 		{
@@ -658,7 +658,7 @@ class Projector
 {
 	static public var pjLinkPath		: String;
 
-	static public function startup(mac:String,?onStartupComplete:()->Void,?onStartupFailed:()->Void,delay:Float=0)
+	static public function startup(mac:String,?onStartupComplete:()->Void,?onStartupFailed:()->Void)
 	{
 		if (!LANScanner.active)
 			return;
