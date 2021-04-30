@@ -348,7 +348,6 @@ class KontentumNC
 
 	function sendWakeup(pi:PingClient)
 	{
-		// trace("sending wakeup to:"+pi.ip);
 
 		if (pi.client_type==ClientType.projector)
 		{
@@ -357,20 +356,28 @@ class KontentumNC
 			else
 				Projector.startup(pi.mac);
 		}
-		else if (pi.client_type==ClientType.smartplug)
+/*		else if (pi.client_type==ClientType.smartplug)
 		{
 			if (pi.startup_delay>0)
 				Timer.delay(()->SmartPlug.startup(pi.mac),pi.startup_delay*1000);
 			else
 				SmartPlug.startup(pi.mac);
-		}
+		}*/
 		else if (pi.client_type==ClientType.computer)
 		{
 			if (pi.startup_delay>0)
-				Timer.delay(()->sendMagicPacket(pi.ip, pi.mac),pi.startup_delay*1000);
+			{
+				trace("delay: "+pi.startup_delay);
+				delayedWOL_ip = pi.ip;
+				delayedWOL_mac = pi.mac;
+				//delayedWOL_timer = new Timer(1000);
+				//delayedWOL_timer.run = delayedWOL;
+				delayedWOL();
+			}
 			else
 				sendMagicPacket(pi.ip, pi.mac);
 		}
+		trace("done" +pi.mac);
 	}
 
 	function sendShutdown(pi:PingClient)
@@ -379,9 +386,21 @@ class KontentumNC
 		// trace("sending shutdown to.... "+pi.ip);
 		if (pi.client_type==ClientType.projector)
 			Projector.shutdown(pi.mac);
-		else if (pi.client_type==ClientType.smartplug)
-			SmartPlug.shutdown(pi.mac);
+		/*else if (pi.client_type==ClientType.smartplug)
+			SmartPlug.shutdown(pi.mac);*/
 	}
+
+	@:keep
+	function delayedWOL()
+	{
+		//delayedWOL_timer.stop();
+		trace("hello!");
+		sendMagicPacket(delayedWOL_ip, delayedWOL_mac);		
+	}
+
+	var delayedWOL_ip:String;
+	var delayedWOL_mac:String;
+	var delayedWOL_timer:Timer;
 
 	/////////////////////////////////////////////////////////////////////////////////////
 
@@ -704,7 +723,6 @@ class Projector
 				KontentumNC.writeToLog("response : "+response);
 			}
 		}
-		
 	}
 	
 	static public function shutdown(mac:String,?onShutdownComplete:()->Void,?onShutdownFailed:()->Void)
@@ -840,8 +858,6 @@ class SmartPlug
 
 		if (!LANScanner.active)
 			return false;
-
-		LANScanner.i.traceAll();
 
 		var ip = LANScanner.i.getIPByMAC(mac);
 		if (ip!=null)
