@@ -410,7 +410,7 @@ class KontentumNC
 			//if (pi.startup_delay>0)
 			//	Timer.delay(()->Projector.startup(pi.mac),pi.startup_delay*1000);
 			//else
-			trace("wakeup projector : ",pi.mac,pi.ip);
+			// trace("wakeup projector : ",pi.mac,pi.ip);
 			Projector.startup(pi.ip);
 		}
 /*		else if (pi.client_type==ClientType.smartplug)
@@ -596,9 +596,7 @@ class KontentumNC
 
 	static public function sendEmulatedPing(pi:PingClient)
 	{
-		trace("ping projector:"+pi);
 		var sendURL:String = KontentumNC.kontentumLink+"/rest/pingClient/"+pi.id+"/_/"+pi.ip;
-		trace(sendURL);
 		var req = KontentumNC.httpPingClientRequest.clone();
 		req.url = new URL(sendURL);
 		req.callback = onPingClientResponse;
