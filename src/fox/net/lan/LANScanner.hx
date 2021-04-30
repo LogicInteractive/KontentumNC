@@ -61,7 +61,6 @@ class LANScanner
 					var sto:String = StringUtils.truncateSpace(l,"|");
 					if (sto!=null)
 					{
-						trace(sto);
 						var ai:ARPItem = {ip:findIPfromString(sto,"|"),mac:findMACfromString(sto,"|"),isDynamic:findIsDynamicfromString(sto,"|"),name:findNamefromString(sto,"|")};
 						if (ai.mac!=null)
 							ai.mac=ai.mac.toLowerCase().split("-").join(":");

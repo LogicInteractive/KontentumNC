@@ -106,7 +106,8 @@ class KontentumNC
 		{
 			LANScanner.init(true,60*30);
 			LANScanner.i.pingAllinSubnet(subnet);
-			//LANScanner.i.traceAll();
+			if (debug)
+				LANScanner.i.traceAll();
 			//var ip = LANScanner.i.getIPByMAC("00:50:41:8e:26:21");
 			// if (ip!=null)
 			// 	TPLink_KP105.toggle(ip);
