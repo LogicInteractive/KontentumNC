@@ -602,6 +602,7 @@ class KontentumNC
 	static public function sendEmulatedPing(pi:PingClient)
 	{
 		var sendURL:String = KontentumNC.kontentumLink+"/rest/pingClient/"+pi.id+"/_/"+pi.ip;
+		trace(sendURL);
 		var req = KontentumNC.httpPingClientRequest.clone();
 		req.url = new URL(sendURL);
 		req.callback = onPingClientResponse;
