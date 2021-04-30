@@ -331,7 +331,7 @@ class KontentumNC
 		{
 			if (pi.client_type==ClientType.projector)
 			{
-				Projector.query(pi.ip, (isOn:Bool)->
+				Projector.query(pi.mac, (isOn:Bool)->
 				{
 					if (isOn)
 					{
@@ -353,7 +353,7 @@ class KontentumNC
 		if (pi.client_type==ClientType.projector)
 		{
 			if (pi.startup_delay>0)
-				Timer.delay(()->Projector.startup(pi.ip),pi.startup_delay*1000);
+				Timer.delay(()->Projector.startup(pi.mac),pi.startup_delay*1000);
 			else
 				Projector.startup(pi.ip);
 		}
@@ -378,7 +378,7 @@ class KontentumNC
 		// pi.ip = "192.168.1.244";
 		// trace("sending shutdown to.... "+pi.ip);
 		if (pi.client_type==ClientType.projector)
-			Projector.shutdown(pi.ip);
+			Projector.shutdown(pi.mac);
 		else if (pi.client_type==ClientType.smartplug)
 			SmartPlug.shutdown(pi.mac);
 	}
@@ -658,15 +658,22 @@ class Projector
 {
 	static public var pjLinkPath		: String;
 
-	static public function startup(ip:String,?onStartupComplete:()->Void,?onStartupFailed:()->Void,delay:Float=0)
+	static public function startup(mac:String,?onStartupComplete:()->Void,?onStartupFailed:()->Void,delay:Float=0)
 	{
+		if (!LANScanner.active)
+			return;
+
+		var ip = LANScanner.i.getIPByMAC(mac);
+		if (ip==null)
+			return;
+
 		var p = new Process(pjLinkPath,[ip, ProjectorCommand.startup]);
 		var response:String = null;
 
 		if  (KontentumNC.debug)
 		{
-			trace("send wakeup to : "+ip);
-			KontentumNC.writeToLog("send wakeup to : "+ip);
+			trace('send wakeup to : $ip | $mac');
+			KontentumNC.writeToLog('send wakeup to : $ip | $mac');
 		}
 		while (response!=null && response!="")
 		{
@@ -700,15 +707,22 @@ class Projector
 		
 	}
 	
-	static public function shutdown(ip:String,?onShutdownComplete:()->Void,?onShutdownFailed:()->Void)
+	static public function shutdown(mac:String,?onShutdownComplete:()->Void,?onShutdownFailed:()->Void)
 	{
+		if (!LANScanner.active)
+			return;
+
+		var ip = LANScanner.i.getIPByMAC(mac);
+		if (ip==null)
+			return;
+
 		var p = new Process(pjLinkPath,[ip, ProjectorCommand.shutdown]);
 		var response:String = null;
 
 		if  (KontentumNC.debug)
 		{
-			trace("send shutdown to : "+ip);
-			KontentumNC.writeToLog("send shutdown to : "+ip);
+			trace('send shutdown to : $ip | $mac');
+			KontentumNC.writeToLog('send shutdown to : $ip | $mac');
 		}
 
 		while (response!=null && response!="")
@@ -743,13 +757,20 @@ class Projector
 		
 	}
 	
-	static public function query(ip:String,?onQueryComplete:(on:Bool)->Void,?onQueryFailed:(err:String)->Void)
+	static public function query(mac:String,?onQueryComplete:(on:Bool)->Void,?onQueryFailed:(err:String)->Void)
 	{
+		if (!LANScanner.active)
+			return;
+
+		var ip = LANScanner.i.getIPByMAC(mac);
+		if (ip==null)
+			return;
+
 		var p = new Process(pjLinkPath,[ip, ProjectorCommand.query]);
 		var response:String = "";
 
-		// if  (KontentumNC.debug)
-			// trace("send query to : "+ip + " :: "+pjLinkPath);
+		if  (KontentumNC.debug)
+			trace('send query to : $ip | $mac');
 
 		while (response==null || response=="")
 		{
