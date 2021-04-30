@@ -357,6 +357,12 @@ class KontentumNC
 
 	function processAllClients(pingClients:Array<PingClient>)
 	{
+		for (pi in pingClients)
+		{
+			if (pi!=null)
+				pi.mac = pi.mac.toLowerCase();
+		}
+
 		sendPingFromProjectorsThatAreOn(pingClients);
 		// sendPingFromSmartPlugsThatAreOn(pingClients);
 	}
