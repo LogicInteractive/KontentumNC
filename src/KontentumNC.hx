@@ -29,10 +29,10 @@ class KontentumNC
 {
 	//static public var buildDate					: Date				= makeBuildDate();
 	public static var kontentumLink				: String			= "";
-	var restPingRelay							: String 			= "";
-	var apiKey									: String 			= "";
-	var pingTime								: Float 			= 1.0;
-	var offlineTimeoutTime						: Float 			= 1.0;
+	var restPingRelay							: String = "";
+	var apiKey									: String = "";
+	var pingTime								: Float = 1.0;
+	var offlineTimeoutTime						: Float = 1.0;
 
 	public static var httpPingClientRequest		: HttpRequest;
 	var httpPingRelayRequest					: HttpRequest;
@@ -110,7 +110,7 @@ class KontentumNC
 				LANScanner.i.traceAll();
 			//var ip = LANScanner.i.getIPByMAC("00:50:41:8e:26:21");
 			// if (ip!=null)
-			// 	TPLink_KP105.toggle(ip);
+			// TPLink_KP105.toggle(ip);
 		}
 
 		udpSocket = new UdpSocket();
@@ -399,15 +399,16 @@ class KontentumNC
 					pi.ip = tip;
 			}
 
-			if (pi.client_type==ClientType.projector)
+	                if (pi.client_type==ClientType.projector)
 			{
-				Projector.query(pi.ip, (isOn:Bool)->
-				{
-					if (isOn)
-					{
+	                        Projector.query(pi.ip, (isOn:Bool)->
+		                {
+		                        if (KontentumNC.debug)
+						trace("Projector "+ pi.ip +" is on : "+Std.string(isOn));
+				        if (isOn)
 						KontentumNC.sendEmulatedPing(pi);
-					}
-				},(err)->{ if (debug) trace("projector query failed:"+err);/*writeToLog("projector query failed:"+err);*/});
+				},
+	                        (err)->{ if (KontentumNC.debug) trace("projector query failed:"+err);});
 			}
 
 		}		
@@ -484,7 +485,7 @@ class KontentumNC
 
 		// udpSocket.sendTo(packet, 0, packet.length, adr);
 
-		// 		var adrBR = new Address();
+		//	var adrBR = new Address();
 		//	adrBR.host = new Host("255.255.255.255").ip;
 		//	adrBR.port = 9; // Hardcoded for WOL
 
@@ -659,8 +660,8 @@ typedef PingResponse =
 
 typedef PingClient =
 {
-	var exhibit_id 		: Int; 
-	var app_id 			: Int; 
+	var exhibit_id		: Int; 
+	var app_id		: Int; 
 	var last_ping		: String; 
 	var launch			: String; 
 	var hostname		: String; 
@@ -847,7 +848,7 @@ class Projector
 		var response:String = "";
 
 		if  (KontentumNC.debug)
-			trace('send query to : $ip');
+			trace('send query to projector : $ip');
 
 		while (response==null || response=="")
 		{
