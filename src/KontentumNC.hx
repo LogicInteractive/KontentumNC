@@ -29,10 +29,10 @@ class KontentumNC
 {
 	//static public var buildDate					: Date				= makeBuildDate();
 	public static var kontentumLink				: String			= "";
-	var restPingRelay							: String = "";
-	var apiKey									: String = "";
-	var pingTime								: Float = 1.0;
-	var offlineTimeoutTime						: Float = 1.0;
+	var restPingRelay							: String 			= "";
+	var apiKey									: String 			= "";
+	var pingTime								: Float 			= 1.0;
+	var offlineTimeoutTime						: Float 			= 1.0;
 
 	public static var httpPingClientRequest		: HttpRequest;
 	var httpPingRelayRequest					: HttpRequest;
@@ -399,16 +399,17 @@ class KontentumNC
 					pi.ip = tip;
 			}
 
-	                if (pi.client_type==ClientType.projector)
+	        if (pi.client_type==ClientType.projector)
 			{
-	                        Projector.query(pi.ip, (isOn:Bool)->
-		                {
-		                        if (KontentumNC.debug)
+				Projector.query(pi.ip, (isOn:Bool)->
+		        {
+					if (KontentumNC.debug)
 						trace("Projector "+ pi.ip +" is on : "+Std.string(isOn));
-				        if (isOn)
+						
+					if (isOn)
 						KontentumNC.sendEmulatedPing(pi);
 				},
-	                        (err)->{ if (KontentumNC.debug) trace("projector query failed:"+err);});
+				(err)->{ if (KontentumNC.debug) trace("projector query failed:"+err);});
 			}
 
 		}		
