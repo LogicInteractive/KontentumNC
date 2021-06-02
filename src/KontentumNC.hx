@@ -343,10 +343,10 @@ class KontentumNC
 		{
 			sendMagicPacket(wa.ip, wa.mac);	
 		}
-		// else if (wa.type == ClientType.smartplug)
-		// {
-		// 	SmartPlug.startup(pi.mac);
-		// }
+		else if (wa.type == ClientType.smartplug)
+		{
+			SmartPlug.startup(pi.mac);
+		}
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -360,7 +360,7 @@ class KontentumNC
 		}
 
 		sendPingFromProjectorsThatAreOn(pingClients);
-		// sendPingFromSmartPlugsThatAreOn(pingClients);
+		sendPingFromSmartPlugsThatAreOn(pingClients);
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -370,8 +370,6 @@ class KontentumNC
 
 		for (pi in pingClients)
 		{
-//			trace(pi);
-
 			if (pi.client_type==ClientType.smartplug)
 			{
 				if (SmartPlug.isOn(pi.mac))
