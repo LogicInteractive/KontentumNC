@@ -345,7 +345,7 @@ class KontentumNC
 		}
 		else if (wa.type == ClientType.smartplug)
 		{
-			SmartPlug.startup(pi.mac);
+			SmartPlug.startup(wa.mac);
 		}
 	}
 
@@ -427,13 +427,13 @@ class KontentumNC
 			// trace("wakeup projector : ",pi.mac,pi.ip);
 			Projector.startup(pi.ip);
 		}
-/*		else if (pi.client_type==ClientType.smartplug)
+		else if (pi.client_type==ClientType.smartplug)
 		{
 			if (pi.startup_delay>0)
 				Timer.delay(()->SmartPlug.startup(pi.mac),pi.startup_delay*1000);
 			else
 				SmartPlug.startup(pi.mac);
-		}*/
+		}
 		else if (pi.client_type==ClientType.computer)
 		{
 			if (pi.startup_delay>0)
@@ -457,8 +457,8 @@ class KontentumNC
 		// trace("sending shutdown to.... "+pi.ip);
 		if (pi.client_type==ClientType.projector)
 			Projector.shutdown(pi.ip);
-		/*else if (pi.client_type==ClientType.smartplug)
-			SmartPlug.shutdown(pi.mac);*/
+		else if (pi.client_type==ClientType.smartplug)
+			SmartPlug.shutdown(pi.mac);
 	}
 /*
 	@:keep
