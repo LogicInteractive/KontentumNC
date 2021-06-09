@@ -5,7 +5,7 @@
 		<apiKey>0c8238b9c3349ec6d8dbd4b25939d705</apiKey> 
 		<ping>30.0</ping>
 		<offlineTimeout>60.0</offlineTimeout>
-		<pjl>/home/pi/KontentumNC/bin/pjl</pjl>
+		<pjl>/home/pi/KontentumNC/pjl</pjl>
 	</kontentum>
 	<debug>true</debug>
 </config>
