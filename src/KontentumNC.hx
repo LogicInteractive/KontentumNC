@@ -781,7 +781,7 @@ class Projector
 			if (response!=null && response.length>0)
 			{
 				p.close();
-				response = response.split("%1").join("");
+				response = response.split("%1").join("").toUpperCase();
 				if (response=="POWR=OK")
 					if (onStartupComplete!=null)
 						onStartupComplete();
@@ -823,7 +823,7 @@ class Projector
 			if (response!=null && response.length>0)
 			{
 				p.close();
-				response = response.split("%1").join("");
+				response = response.split("%1").join("").toUpperCase();
 				if (response=="POWR=OK")
 					if (onShutdownComplete!=null)
 						onShutdownComplete();
@@ -863,7 +863,7 @@ class Projector
 		if (response!=null && response!="")
 		{
 			p.close();
-			response = response.split("%1").join("");
+			response = response.split("%1").join("").toUpperCase();
 			if (response=="POWR=1")
 			{
 				if (onQueryComplete!=null)
