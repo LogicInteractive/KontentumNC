@@ -895,15 +895,19 @@ class SmartPlug
 {
 	static public function startup(mac:String):Bool
 	{
-		return false;
-
 		if (!LANScanner.active)
 			return false;
 
 		var ip = LANScanner.i.getIPByMAC(mac);
+
+		if (KontentumNC.debug)
+			trace('turn on smartplug : $ip | $mac');
+
 		if (ip!=null)
 		{
 			var res:TPLinkKasaResponseData = TPLink_KP105.turnOn(ip);
+			if (KontentumNC.debug)
+				trace(res);			
 			var isit:Bool = parseCheckIsOn(res);
 			return isit==true;
 		}
@@ -919,9 +923,15 @@ class SmartPlug
 			return false;
 
 		var ip = LANScanner.i.getIPByMAC(mac);
+
+		if (KontentumNC.debug)
+			trace('turn off smartplug : $ip | $mac');
+
 		if (ip!=null)
 		{
 			var res:TPLinkKasaResponseData = TPLink_KP105.turnOff(ip);
+			if (KontentumNC.debug)
+				trace(res);			
 			return parseCheckIsOn(res)==false;
 		}
 
@@ -936,9 +946,15 @@ class SmartPlug
 			return false;
 
 		var ip = LANScanner.i.getIPByMAC(mac);
+
+		if (KontentumNC.debug)
+			trace('check status smartplug : $ip | $mac');
+
 		if (ip!=null)
 		{
 			var res:TPLinkKasaResponseData = TPLink_KP105.getStatus(ip);
+			if (KontentumNC.debug)
+				trace(res);			
 			return parseCheckIsOn(res);
 		}
 
