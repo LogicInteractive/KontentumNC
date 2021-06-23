@@ -917,8 +917,6 @@ class SmartPlug
 	
 	static public function shutdown(mac:String):Bool
 	{
-		return false;
-
 		if (!LANScanner.active)
 			return false;
 
@@ -940,8 +938,6 @@ class SmartPlug
 	
 	static public function isOn(mac:String):Bool
 	{
-		return false;
-
 		if (!LANScanner.active)
 			return false;
 
