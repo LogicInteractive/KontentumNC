@@ -143,8 +143,8 @@ class KontentumNC
 		{
 			if (debug)
 			{
-				trace("Client offline. Should implement this....");
-				writeToLog("Client offline. Should implement this....");
+				trace("Client offline. Should implement offline mode.... Will retry connection...");
+				writeToLog("Client offline. Should implement offline mode.... Will retry connection...");
 			}
 			httpPingRelayRequest.clone().send();
 		}
