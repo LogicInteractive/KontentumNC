@@ -52,7 +52,7 @@ class LANScanner
 			}
 			catch(e:haxe.Exception)
 			{
-				if (debug)
+				// if (debug)
 					trace("Error: Could not get ARP info");
 			}
 			if (bytesAvailable>0)
