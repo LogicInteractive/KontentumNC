@@ -116,8 +116,8 @@ class KontentumNC
 		udpSocket = new UdpSocket();
 		// udpSocket.setBroadcast(true);
 
-		httpPingRelayRequest = new HttpRequest({url: kontentumLink + restPingRelay + "/" + apiKey + "/" + localIP, callback: onHttpResponse});
-		httpPingClientRequest = new HttpRequest({url: kontentumLink});
+		httpPingRelayRequest = new HttpRequest({url: kontentumLink + restPingRelay + "/" + apiKey + "/" + localIP, callback: onHttpResponse, callbackError:onHttpError});
+		httpPingRelayRequest.timeout = 60*3;
 
 		startPingTimer();
 		httpPingRelayRequest.clone().send();
@@ -143,6 +143,7 @@ class KontentumNC
 				trace("Client offline. Should implement this....");
 				writeToLog("Client offline. Should implement this....");
 			}
+			httpPingRelayRequest.clone().send();
 		}
 	}
 
@@ -228,6 +229,18 @@ class KontentumNC
 		return ObjUtils.fromXML(Xml.parse(configFile));
 
 		return {};
+	}
+
+	function onHttpError(response:HttpResponse) 
+	{
+		if (debug)
+		{
+			trace("HTTP error: "+response.toString());
+			trace("Will retry connection...");
+		}
+
+		httpPingRelayRequest = httpPingRelayRequest.clone();
+		httpPingRelayRequest.send();
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
