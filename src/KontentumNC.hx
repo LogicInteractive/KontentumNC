@@ -27,7 +27,7 @@ import sys.net.UdpSocket;
 
 class KontentumNC
 {
-	//static public var buildDate					: Date				= makeBuildDate();
+	//static public var buildDate				: Date				= makeBuildDate();
 	public static var kontentumLink				: String			= "";
 	var restPingRelay							: String 			= "";
 	var apiKey									: String 			= "";
@@ -116,6 +116,9 @@ class KontentumNC
 		udpSocket = new UdpSocket();
 		// udpSocket.setBroadcast(true);
 
+		if (debug)
+			trace("Connecting to Kontentum.... ");
+			
 		httpPingRelayRequest = new HttpRequest({url: kontentumLink + restPingRelay + "/" + apiKey + "/" + localIP, callback: onHttpResponse, callbackError:onHttpError});
 		httpPingRelayRequest.timeout = 60*3;
 
@@ -170,9 +173,12 @@ class KontentumNC
 	{
 		if (response.isOK)
 		{
-			netmode = Netmode.ONLINE;
 			timeoutTimer.stop();
 			timeoutTimer.run = onOfflineTimeout;
+			if (netmode==Netmode.OFFLINE)
+				LANScanner.i.reTrigger(localIP,debug);
+				
+			netmode = Netmode.ONLINE;
 
 			var rsp:PingResponse = response.toJson();
 			var newPingTime:Float = rsp.ping;
@@ -239,6 +245,7 @@ class KontentumNC
 			trace("Will retry connection...");
 		}
 
+		netmode=Netmode.OFFLINE;
 		httpPingRelayRequest = httpPingRelayRequest.clone();
 		httpPingRelayRequest.send();
 	}

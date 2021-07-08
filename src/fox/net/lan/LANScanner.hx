@@ -41,18 +41,34 @@ class LANScanner
 		var bf:Bytes = Bytes.alloc(4096);
 		var p:Process = new Process("arp",["-n"]);
 
+		var gotScanData:Bool = false;
+		var timeoutCounter = 0;
 		var bytesAvailable:Int = 0;
-		while (true)
+		while (true && timeoutCounter<3)
 		{
-			bytesAvailable = p.stdout.readBytes(bf,0,bf.length);
+			try 
+			{
+				bytesAvailable = p.stdout.readBytes(bf,0,bf.length);
+			}
+			catch(e:haxe.Exception)
+			{
+				if (debug)
+					trace("Error: Could not get ARP info");
+			}
 			if (bytesAvailable>0)
 			{
 				bf = bf.sub(0,bytesAvailable);
+				gotScanData = true;
 				break;
 			}
+			else
+			{
+				timeoutCounter++;
+			}
+
 		}
 
-		if (bf!=null && bf.length>0)
+		if (gotScanData && bf!=null && bf.length>0)
 		{
 			var ot:String = bf.toString();
 			if (ot!=null)
@@ -203,6 +219,20 @@ class LANScanner
 		return null;
 	}
 
+	/////////////////////////////////////////////////////////////////////////////////////////
+
+	public function reTrigger(localIP:String,debug:Bool=false)
+	{
+		var subnet:String = getSubnetFromIP(localIP);
+		if (subnet!=null)
+		{
+			pingAllinSubnet(subnet);
+			if (debug)
+				LANScanner.i.traceAll();
+
+			scan();
+		}	
+	}
 	/////////////////////////////////////////////////////////////////////////////////////////
 
 	public function pingAllinSubnet(ipSub:String="192.168.68")
