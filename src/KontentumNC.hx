@@ -121,6 +121,7 @@ class KontentumNC
 			
 		httpPingRelayRequest = new HttpRequest({url: kontentumLink + restPingRelay + "/" + apiKey + "/" + localIP, callback: onHttpResponse, callbackError:onHttpError});
 		httpPingRelayRequest.timeout = 60*3;
+		httpPingClientRequest = new HttpRequest({url: kontentumLink});		
 
 		startPingTimer();
 		httpPingRelayRequest.clone().send();
