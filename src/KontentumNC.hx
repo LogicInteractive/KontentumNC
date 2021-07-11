@@ -207,6 +207,9 @@ class KontentumNC
 				
 			saveOfflineData(rsp);
 
+			if (rsp.callback!=null && rsp.callback!="")
+				processLocalCallback(rsp.callback);
+
 			// trace(response.content);
 			// if (response.content != null)
 			// onPingData(response);
@@ -590,6 +593,11 @@ class KontentumNC
 		File.saveContent(appDir+"log.txt",logFile);
 	}
 
+	static public function rebootLocalMachine()
+	{
+		Sys.command("sudo reboot");
+	}
+
 	static public function getLocalIP():String
 	{
 		var p = new Process("hostname",["-I"]);  //"hostname -I | awk '{print $1}'"
@@ -625,6 +633,18 @@ class KontentumNC
 			}
 		//}
 		//return response;
+	}
+
+	static function processLocalCallback(callbackCmd:String)
+	{
+		switch (callbackCmd.toLowerCase())
+		{
+			case "reboot": 
+				rebootLocalMachine();
+
+			default:
+				
+		}
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -676,12 +696,13 @@ typedef PingResponse =
 	var schedules		: Array<ScheduleItem>;
 	var ping			: Float;
 	var success			: Bool;
+	var callback		: String;
 }
 
 typedef PingClient =
 {
 	var exhibit_id		: Int; 
-	var app_id		: Int; 
+	var app_id			: Int; 
 	var last_ping		: String; 
 	var launch			: String; 
 	var hostname		: String; 
