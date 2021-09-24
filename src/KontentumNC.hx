@@ -3,9 +3,11 @@ package;
 import com.akifox.asynchttp.HttpRequest;
 import com.akifox.asynchttp.HttpResponse;
 import com.akifox.asynchttp.URL;
+import fox.compile.CompileTime;
 import fox.hw.tplink.TPLinkDevice.TPLink_KP105;
 import fox.hw.tplink.TPLinkKasa.TPLinkKasaResponseData;
 import fox.net.lan.LANScanner;
+import fox.utils.DateUtils;
 import haxe.Json;
 import haxe.Timer;
 import haxe.io.Bytes;
@@ -53,6 +55,7 @@ class KontentumNC
 	var osName									: String;
 	static public var netmode					: Netmode			= Netmode.ONLINE;
 	static public var appDir					: String;
+	static public var buildDate					: Date				= CompileTime.buildDate();
 
 	/////////////////////////////////////////////////////////////////////////////////////
 
@@ -65,7 +68,6 @@ class KontentumNC
 
 	public function new()
 	{
-
 		// Get proper app dir
 
 		osName = Sys.systemName();
@@ -74,9 +76,10 @@ class KontentumNC
 			Projector.pjLinkPath = "./pjl";
 			localIP = getLocalIP();
 			
+			var bDate:String = DateUtils.getFormattedDate(buildDate);
 			//var dstr = buildDate.getDate()+"/"+(buildDate.getMonth()+1)+"/"+buildDate.getFullYear()+" "+buildDate.getHours()+":"+buildDate.getMinutes();
 			var dstr = "";
-			Sys.println('Kontentum Client :: Logic Interactive | $localIP');
+			Sys.println('Kontentum Client :: Logic Interactive | $localIP | Build: $bDate');
 		}
 		else
 			Projector.pjLinkPath = "pjl";
@@ -119,7 +122,7 @@ class KontentumNC
 		if (debug)
 			trace("Connecting to Kontentum.... ");
 			
-		httpPingRelayRequest = new HttpRequest({url: kontentumLink + restPingRelay + "/" + apiKey + "/" + localIP, callback: onHttpResponse, callbackError:onHttpError});
+		httpPingRelayRequest = new HttpRequest({url: kontentumLink + restPingRelay + "/" + apiKey + "/" + localIP + "/" + StringTools.urlEncode(buildDate.toString()), callback: onHttpResponse, callbackError:onHttpError});
 		httpPingRelayRequest.timeout = 60*3;
 		httpPingClientRequest = new HttpRequest({url: kontentumLink});		
 
