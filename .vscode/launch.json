@@ -1,27 +1,25 @@
 {
-	"version": "0.2.0",
-	"configurations":
-    [
+    "version": "0.2.0",
+    "configurations": [
         {
             "name": "Build + debug",
             "type": "hxcpp",
             "request": "launch",
             "preLaunchTask": "Build (Debug)",
-            "program": "${workspaceFolder}/bin/KontentumNC-debug.exe"
+            "program": "${workspaceFolder}/bin/KontentumNC-debug"
         },
         {
             "name": "Build + run",
             "type": "hxcpp",
             "request": "launch",
             "preLaunchTask": "Build (Release)",
-            "program": "${workspaceFolder}/bin/KontentumNC.exe"
+            "program": "${workspaceFolder}/bin/KontentumNC"
         },
         {
             "name": "Debug only",
             "type": "hxcpp",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/KontentumNC-debug.exe"
+            "program": "${workspaceFolder}/bin/KontentumNC-debug"
         }
-	]
+    ]
 }
-

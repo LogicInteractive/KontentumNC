@@ -1,5 +1,6 @@
 package;
 
+import com.akifox.asynchttp.HttpMethod;
 import com.akifox.asynchttp.HttpRequest;
 import com.akifox.asynchttp.HttpResponse;
 import com.akifox.asynchttp.URL;
@@ -14,6 +15,7 @@ import haxe.io.Bytes;
 import haxe.macro.Expr.Catch;
 import haxe.macro.Expr.Error;
 import no.logic.uix.utils.Convert;
+import no.logic.uix.utils.MathUtils;
 import no.logic.uix.utils.ObjUtils;
 import sys.FileSystem;
 import sys.io.File;
@@ -31,9 +33,10 @@ class KontentumNC
 {
 	//static public var buildDate				: Date				= makeBuildDate();
 	public static var kontentumLink				: String			= "";
+	public var restRelayCallback				: String 			= "/rest/relayCallback";
 	var restPingRelay							: String 			= "";
 	var apiKey									: String 			= "";
-	var pingTime								: Float 			= 1.0;
+	public var pingTime							: Float 			= 1.0;
 	var offlineTimeoutTime						: Float 			= 1.0;
 
 	public static var httpPingClientRequest		: HttpRequest;
@@ -56,6 +59,9 @@ class KontentumNC
 	static public var netmode					: Netmode			= Netmode.ONLINE;
 	static public var appDir					: String;
 	static public var buildDate					: Date				= CompileTime.buildDate();
+
+	var jobTracker								: JobTracker;
+	var offlineTracker							: OfflineTracker;
 
 	/////////////////////////////////////////////////////////////////////////////////////
 
@@ -119,12 +125,16 @@ class KontentumNC
 		udpSocket = new UdpSocket();
 		// udpSocket.setBroadcast(true);
 
+		jobTracker = new JobTracker(this);
+		offlineTracker = new OfflineTracker(this);
+
 		if (debug)
 			trace("Connecting to Kontentum.... ");
 			
-		httpPingRelayRequest = new HttpRequest({url: kontentumLink + restPingRelay + "/" + apiKey + "/" + localIP + "/" + StringTools.urlEncode(buildDate.toString()), callback: onHttpResponse, callbackError:onHttpError});
+		httpPingRelayRequest = new HttpRequest({url: kontentumLink + restPingRelay + "/" + apiKey + "/" + StringTools.urlEncode(localIP) + "/" + StringTools.urlEncode(buildDate.toString()), callback: onHttpResponse, callbackError:onHttpError});
 		httpPingRelayRequest.timeout = 60*3;
 		httpPingClientRequest = new HttpRequest({url: kontentumLink});		
+		trace(httpPingRelayRequest.url);
 
 		startPingTimer();
 		httpPingRelayRequest.clone().send();
@@ -177,6 +187,7 @@ class KontentumNC
 	{
 		if (response.isOK)
 		{
+			offlineTracker.gotPing();
 			timeoutTimer.stop();
 			timeoutTimer.run = onOfflineTimeout;
 			if (netmode==Netmode.OFFLINE)
@@ -212,6 +223,9 @@ class KontentumNC
 
 			if (rsp.callback!=null && rsp.callback!="")
 				processLocalCallback(rsp.callback);
+
+			if (rsp.url_jobs!=null)
+				jobTracker.processUrlJobs(rsp.url_jobs);
 
 			// trace(response.content);
 			// if (response.content != null)
@@ -574,6 +588,7 @@ class KontentumNC
 		trace(msg);
 		writeToLog(msg);
 		Sys.exit(1);
+
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -700,6 +715,14 @@ typedef PingResponse =
 	var ping			: Float;
 	var success			: Bool;
 	var callback		: String;
+	var url_jobs		: Array<UrlJob>;
+}
+
+typedef UrlJob =
+{
+	var reference		: String; 
+	var url				: String; 
+	var method			: String; 
 }
 
 typedef PingClient =

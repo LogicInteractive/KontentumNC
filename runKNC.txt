@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# Initialize crash counter
+crash_count=0
+
+while true; do
+    # Attempt to start KontentumNC
+    echo "Starting KontentumNC. Attempt number: $crash_count"
+    sudo /home/pi/KontentumNC/KontentumNC
+
+    # KontentumNC has exited, increment crash count
+    ((crash_count++))
+
+    # Check if crash count exceeds 5
+    if [ $crash_count -gt 5 ]; then
+        echo "KontentumNC has exited more than 5 times. Rebooting now."
+        sudo reboot
+        exit
+    fi
+
+    # Wait before attempting to restart, to handle any needed cooldown
+    sleep 10
+done
