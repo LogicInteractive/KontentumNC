@@ -48,7 +48,7 @@ class JobTracker
 	function onJobResponse(response:HttpResponse)
 	{
 		var success:Bool = response.status==200;
-		if (KontentumNC.debug) trace('Job {$response.fingerprint} : response.status : ${response.status}');
+		if (KontentumNC.debug) trace('Job ${response.fingerprint} : response.status : ${response.status}');
 		sendJobCallback(success, response);
 
 		if (KontentumNC.debug) trace('Job completed ${response.fingerprint}');
@@ -57,7 +57,7 @@ class JobTracker
 
 	function onJobError(response:HttpResponse)
 	{
-		if (KontentumNC.debug) trace('Job {$response.fingerprint} : response.status : ${response.status}');
+		if (KontentumNC.debug) trace('Job ${response.fingerprint} : response.status : ${response.status}');
 
 		var success:Bool = false;
 		sendJobCallback(success, response);
