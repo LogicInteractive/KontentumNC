@@ -157,9 +157,18 @@ class KontentumNC
 		{
 			if (debug)
 			{
-				trace("Client offline. Should implement offline mode.... Will retry connection...");
-				writeToLog("Client offline. Should implement offline mode.... Will retry connection...");
+				trace("Client offline. Using cached data and attempting reconnection...");
+				writeToLog("Client offline. Using cached data and attempting reconnection...");
 			}
+			
+			// Use cached data for offline operations
+			var cachedClients = loadOfflineData();
+			if (cachedClients != null)
+			{
+				processAllClients(cachedClients);
+			}
+			
+			// Still attempt to reconnect
 			httpPingRelayRequest.clone().send();
 		}
 	}
@@ -191,7 +200,14 @@ class KontentumNC
 			timeoutTimer.stop();
 			timeoutTimer.run = onOfflineTimeout;
 			if (netmode==Netmode.OFFLINE)
+			{
+				if (debug)
+				{
+					trace("Connection restored! Going back online.");
+					writeToLog("Connection restored! Going back online.");
+				}
 				LANScanner.i.reTrigger(localIP,debug);
+			}
 				
 			netmode = Netmode.ONLINE;
 
@@ -341,6 +357,36 @@ class KontentumNC
 		{
 			
 		}
+	}
+
+	function loadOfflineData():Array<PingClient>
+	{
+		try 
+		{
+			if (FileSystem.exists(appDir+"offlineCache"))
+			{
+				var cachedData:String = File.getContent(appDir+"offlineCache");
+				if (cachedData != null && cachedData != "")
+				{
+					var clients:Array<PingClient> = Json.parse(cachedData);
+					if (debug)
+					{
+						trace("Loaded " + (clients != null ? clients.length : 0) + " clients from offline cache");
+						writeToLog("Using offline cached data: " + (clients != null ? clients.length : 0) + " clients");
+					}
+					return clients;
+				}
+			}
+		}
+		catch(err:Dynamic)
+		{
+			if (debug)
+			{
+				trace("Error loading offline cache: " + err);
+				writeToLog("Error loading offline cache: " + err);
+			}
+		}
+		return null;
 	}
 	
 	/////////////////////////////////////////////////////////////////////////////////////
