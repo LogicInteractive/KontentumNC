@@ -1,7 +1,6 @@
 package;
 
-import com.akifox.asynchttp.HttpRequest;
-import com.akifox.asynchttp.HttpResponse;
+import HttpRequest2;
 import com.akifox.asynchttp.URL;
 import fox.compile.CompileTime;
 import fox.hw.tplink.TPLinkDevice.TPLink_KP105;
@@ -14,6 +13,7 @@ import haxe.io.Bytes;
 import haxe.macro.Expr.Catch;
 import haxe.macro.Expr.Error;
 import no.logic.uix.utils.Convert;
+import no.logic.uix.utils.MathUtils;
 import no.logic.uix.utils.ObjUtils;
 import sys.FileSystem;
 import sys.io.File;
@@ -29,15 +29,27 @@ import sys.net.UdpSocket;
 
 class KontentumNC
 {
+	// Add these properties to your KontentumNC class
+	private static inline var MAX_CONSECUTIVE_FAILURES 		= 5;
+	private static inline var INITIAL_RETRY_DELAY 			= 1000; // ms
+	private static inline var MAX_RETRY_DELAY 				= 5000; // ms
+
+	private var consecutiveFailures:Int 					= 0;
+	private var retryDelay:Int 								= INITIAL_RETRY_DELAY;
+
 	//static public var buildDate				: Date				= makeBuildDate();
+	public static var i							: KontentumNC;
 	public static var kontentumLink				: String			= "";
+	public var restRelayCallback				: String 			= "/rest/relayCallback";
 	var restPingRelay							: String 			= "";
 	var apiKey									: String 			= "";
-	var pingTime								: Float 			= 1.0;
+	public var pingTime							: Float 			= 1.0;
+	public var offlineTimeout					: Float 			= 1.0;
 	var offlineTimeoutTime						: Float 			= 1.0;
 
-	public static var httpPingClientRequest		: HttpRequest;
-	var httpPingRelayRequest					: HttpRequest;
+	public static var httpPingClientRequest		: HttpRequest2;
+	var httpPingRelayRequest					: HttpRequest2;
+	public static var httpAsync					: Bool				= true;
 	var udpSocket								: UdpSocket;
 	var udpSocket2								: UdpSocket;
 	var magicPacket								: Bytes;
@@ -46,6 +58,8 @@ class KontentumNC
 	var timeoutTimer							: Timer;
 	var localIP									: String			= "";
 	var isFirstPing								: Bool				= true;
+	var retryPing								: Bool				= false;
+	static var canWriteToLog					: Bool				= true;
 	static public var debug						: Bool;
 	var settings								: Dynamic;
 
@@ -57,11 +71,17 @@ class KontentumNC
 	static public var appDir					: String;
 	static public var buildDate					: Date				= CompileTime.buildDate();
 
+	var jobTracker								: JobTracker;
+	var offlineTracker							: OfflineTracker;
+	var pingCounter								: Int					= 0;
+	var metricsTimer							: Timer;
+	var startTime								: Float;
+
 	/////////////////////////////////////////////////////////////////////////////////////
 
 	static function main()
 	{
-		new KontentumNC();
+		i = new KontentumNC();
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -100,9 +120,12 @@ class KontentumNC
 		restPingRelay = settings.config.kontentum.api;
 		apiKey = settings.config.kontentum.apiKey;
 		pingTime = settings.config.kontentum.ping;
+		offlineTimeout = settings.config.kontentum.offlineTimeout;
 		Projector.pjLinkPath = settings.config.kontentum.pjl;
 		
 		debug = Convert.toBool(settings.config.debug);
+		// Logging enabled - controlled by config.xml <debug> setting
+		canWriteToLog = debug;
 
 		var subnet:String = LANScanner.getSubnetFromIP(localIP);
 		if (subnet!=null)
@@ -119,12 +142,23 @@ class KontentumNC
 		udpSocket = new UdpSocket();
 		// udpSocket.setBroadcast(true);
 
+		jobTracker = new JobTracker(this);
+		offlineTracker = new OfflineTracker(this,offlineTimeout);
+
+		// Start metrics tracking
+		startTime = Timer.stamp();
+		initializeMetricsLog();
+		metricsTimer = new Timer(60000); // Log metrics every 60 seconds
+		metricsTimer.run = logResourceMetrics;
+
 		if (debug)
 			trace("Connecting to Kontentum.... ");
-			
-		httpPingRelayRequest = new HttpRequest({url: kontentumLink + restPingRelay + "/" + apiKey + "/" + localIP + "/" + StringTools.urlEncode(buildDate.toString()), callback: onHttpResponse, callbackError:onHttpError});
-		httpPingRelayRequest.timeout = 60*3;
-		httpPingClientRequest = new HttpRequest({url: kontentumLink});		
+
+		httpPingRelayRequest = new HttpRequest2({url: kontentumLink + restPingRelay + "/" + apiKey + "/" + StringTools.urlEncode(localIP) + "/" + StringTools.urlEncode(buildDate.toString()), callback: onHttpResponse, callbackError:onHttpError, async:httpAsync});
+		// httpPingRelayRequest.timeout = 1;//Std.int(Math.floor(pingTime-1.0));
+		httpPingRelayRequest.timeout = Std.int(Math.floor(pingTime-1.0));
+		httpPingClientRequest = new HttpRequest2({url: kontentumLink, async:httpAsync});
+		// trace(httpPingRelayRequest.url);
 
 		startPingTimer();
 		httpPingRelayRequest.clone().send();
@@ -134,6 +168,8 @@ class KontentumNC
 
 	function onPing()
 	{
+		pingCounter++;
+
 		if (netmode==Netmode.ONLINE)
 		{
 			if (debug)
@@ -141,7 +177,10 @@ class KontentumNC
 				trace("Pinging server");
 				// writeToLog("Pinging server");
 			}
-			httpPingRelayRequest.clone().send();
+			if (retryPing)
+				retryPingRequest();
+			else
+				httpPingRelayRequest.clone().send();
 		}
 		else
 		{
@@ -152,6 +191,8 @@ class KontentumNC
 			}
 			httpPingRelayRequest.clone().send();
 		}
+
+		// trace('Consecutive failures: $consecutiveFailures');
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -173,17 +214,20 @@ class KontentumNC
 
 	/////////////////////////////////////////////////////////////////////////////////////
 
-	function onHttpResponse(response:HttpResponse)
+	function onHttpResponse(response:HttpResponse2)
 	{
 		if (response.isOK)
 		{
+			consecutiveFailures = 0;
+			retryDelay = INITIAL_RETRY_DELAY;
+        
+			offlineTracker.gotPing();
 			timeoutTimer.stop();
 			timeoutTimer.run = onOfflineTimeout;
 			if (netmode==Netmode.OFFLINE)
 				LANScanner.i.reTrigger(localIP,debug);
 				
 			netmode = Netmode.ONLINE;
-
 			var rsp:PingResponse = response.toJson();
 			var newPingTime:Float = rsp.ping;
 
@@ -213,6 +257,13 @@ class KontentumNC
 			if (rsp.callback!=null && rsp.callback!="")
 				processLocalCallback(rsp.callback);
 
+			if (rsp.url_jobs!=null)
+			{
+				trace(response.content);
+				// trace(rsp.timestamp);
+				jobTracker.processUrlJobs(rsp.url_jobs);
+			}
+
 			// trace(response.content);
 			// if (response.content != null)
 			// onPingData(response);
@@ -222,8 +273,12 @@ class KontentumNC
 			// sendMagicPacket("127.0.0.1", "08:6A:0A:83:FA:15");
 			// sendMagicPacket("192.168.1.10", "98:f2:b3:e7:cc:1e");
 		}
-		// else
-		// onPingError(response);
+		else
+		{
+			trace("ERROR : ",response.url.toString());
+			trace("ERROR : ",response);
+			onHttpError(response);
+		}
 	}
 
 	function loadSettings(configXml:String):Dynamic
@@ -244,16 +299,47 @@ class KontentumNC
 		return {};
 	}
 
-	function onHttpError(response:HttpResponse) 
+	// function onHttpError(response:HttpResponse) 
+	// {
+	// 	if (debug)
+	// 	{
+	// 		trace("HTTP error: "+response.toString());
+	// 		trace("Will retry connection...");
+	// 	}
+
+	// 	netmode=Netmode.OFFLINE;
+	// 	httpPingRelayRequest = httpPingRelayRequest.clone();
+	// 	httpPingRelayRequest.send();
+	// }
+
+	function onHttpError(response:HttpResponse2) 
 	{
 		if (debug)
 		{
 			trace("HTTP error: "+response.toString());
-			trace("Will retry connection...");
 		}
+		
+		// netmode = Netmode.OFFLINE;
+		consecutiveFailures++;
+		
+		// #if cpp
+		// cpp.vm.Gc.run(true);
+		// #end
+		
+		retryPing = true;
+	}
 
-		netmode=Netmode.OFFLINE;
-		httpPingRelayRequest = httpPingRelayRequest.clone();
+	function retryPingRequest()
+	{
+		// trace("retry ping");
+		httpPingRelayRequest = new HttpRequest2({
+			url: kontentumLink + restPingRelay + "/" + apiKey, 
+			callback: onHttpResponse, 
+			callbackError: onHttpError,
+			async:httpAsync
+		});
+		// httpPingRelayRequest.timeout = 1;//Std.int(Math.floor(pingTime-1.0));
+		httpPingRelayRequest.timeout = Std.int(Math.floor(pingTime-1.0));
 		httpPingRelayRequest.send();
 	}
 
@@ -265,6 +351,7 @@ class KontentumNC
 
 		if (debug)
 		{
+
 			trace("Clients: [" + pingClients.length + "]");
 			// writeToLog("Clients: [" + pingClients.length + "]");
 		}
@@ -386,8 +473,9 @@ class KontentumNC
 				pi.mac = pi.mac.toLowerCase();
 		}
 
-		sendPingFromProjectorsThatAreOn(pingClients);
-		sendPingFromSmartPlugsThatAreOn(pingClients);
+		// sendPingFromProjectorsThatAreOn(pingClients);
+		sendStatusFromProjectors(pingClients);
+		// sendPingFromSmartPlugsThatAreOn(pingClients);
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -413,7 +501,7 @@ class KontentumNC
 
 	}
 
-	function sendPingFromProjectorsThatAreOn(pingClients:Array<PingClient>)
+	function sendStatusFromProjectors(pingClients:Array<PingClient>)
 	{
 		for (pi in pingClients)
 		{
@@ -426,13 +514,14 @@ class KontentumNC
 
 	        if (pi.client_type==ClientType.projector)
 			{
-				Projector.query(pi.ip, (isOn:Bool)->
+				Projector.query(pi.ip, (state:Int)->
 		        {
 					if (KontentumNC.debug)
-						trace("Projector "+ pi.ip +" is on : "+Std.string(isOn));
+						trace("Projector "+ pi.ip +" has state on : "+state);
 						
-					if (isOn)
-						KontentumNC.sendEmulatedPing(pi);
+					// if (isOn)
+						// KontentumNC.sendEmulatedPing(pi);
+					Projector.sendKontentumCallback(pi,state);
 				},
 				(err)->{ if (KontentumNC.debug) trace("projector query failed:"+err);});
 			}
@@ -440,6 +529,34 @@ class KontentumNC
 		}		
 
 	}
+
+	// function sendPingFromProjectorsThatAreOn(pingClients:Array<PingClient>)
+	// {
+	// 	for (pi in pingClients)
+	// 	{
+	// 		if (LANScanner.i!=null)
+	// 		{
+	// 			var tip:String = LANScanner.i.getIPByMAC(pi.mac);
+	// 			if (tip!=null && tip!="")
+	// 				pi.ip = tip;
+	// 		}
+
+	//         if (pi.client_type==ClientType.projector)
+	// 		{
+	// 			Projector.query(pi.ip, (isOn:Bool)->
+	// 	        {
+	// 				if (KontentumNC.debug)
+	// 					trace("Projector "+ pi.ip +" is on : "+Std.string(isOn));
+						
+	// 				if (isOn)
+	// 					KontentumNC.sendEmulatedPing(pi);
+	// 			},
+	// 			(err)->{ if (KontentumNC.debug) trace("projector query failed:"+err);});
+	// 		}
+
+	// 	}		
+
+	// }
 
 	/////////////////////////////////////////////////////////////////////////////////////
 
@@ -574,26 +691,143 @@ class KontentumNC
 		trace(msg);
 		writeToLog(msg);
 		Sys.exit(1);
+
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
 
-	static public function writeToLog(msg:String)
+	static public function writeToLog(msg:String, ?level:String="INFO")
 	{
-		if (debug==false)
+		if (debug==false || !canWriteToLog)
 			return;
 
 		if (msg==null || msg=="")
 			return;
 
-		var logFile:String = "";
-		if (FileSystem.exists(appDir+"log.txt"))
-			logFile = File.getContent(appDir+"log.txt");
+		try {
+			var logPath = appDir+"log.txt";
 
-		logFile+=Date.now().toString()+"  :  ";
-		logFile+=msg;
-		logFile+="\n";		
-		File.saveContent(appDir+"log.txt",logFile);
+			// Rotate log if it exceeds 10MB
+			if (FileSystem.exists(logPath)) {
+				var stat = FileSystem.stat(logPath);
+				if (stat.size > 10 * 1024 * 1024) { // 10MB
+					// Keep old log as backup
+					if (FileSystem.exists(appDir+"log.txt.old"))
+						FileSystem.deleteFile(appDir+"log.txt.old");
+					FileSystem.rename(logPath, appDir+"log.txt.old");
+					trace("Log rotated: log.txt -> log.txt.old");
+				}
+			}
+
+			var timestamp = Date.now().toString();
+			var logLine = '[$timestamp] [$level] $msg\n';
+
+			// Append mode - much more efficient than reading entire file
+			var output = sys.io.File.append(logPath, false);
+			output.writeString(logLine);
+			output.close();
+		} catch (e:Dynamic) {
+			trace("ERROR: Failed to write to log: " + e);
+		}
+	}
+
+	function initializeMetricsLog()
+	{
+		try {
+			var metricsPath = appDir+"metrics.csv";
+			if (!FileSystem.exists(metricsPath)) {
+				// Create CSV header
+				var header = "timestamp,uptime_sec,threads,active_jobs,memory_mb,cpu_percent,file_handles\n";
+				File.saveContent(metricsPath, header);
+			}
+		} catch (e:Dynamic) {
+			trace("Failed to initialize metrics log: " + e);
+		}
+	}
+
+	function logResourceMetrics()
+	{
+		try {
+			// Get AsyncHttp thread count
+			var threadCount = com.akifox.asynchttp.AsyncHttp.getThreadCount();
+
+			// Get active jobs count
+			var activeJobsCount = (jobTracker != null) ? jobTracker.getActiveJobsCount() : 0;
+
+			// Get memory and CPU usage
+			var memoryMB:Float = 0;
+			var cpuPercent:Float = 0;
+			var fileHandles:Int = 0;
+
+			try {
+				// Get PID
+				var proc = new Process("sh", ["-c", "echo $$"]);
+				var pidStr = StringTools.trim(proc.stdout.readAll().toString());
+				proc.close();
+
+				// Get memory (RSS) and CPU
+				var psProc = new Process("ps", ["-p", pidStr, "-o", "rss=,%cpu=", "--no-headers"]);
+				var psOutput = StringTools.trim(psProc.stdout.readAll().toString());
+				psProc.close();
+
+				var parts = psOutput.split(" ");
+				var filteredParts = [];
+				for (p in parts) {
+					var trimmed = StringTools.trim(p);
+					if (trimmed != "") filteredParts.push(trimmed);
+				}
+
+				if (filteredParts.length >= 2) {
+					var memKB = Std.parseFloat(filteredParts[0]);
+					if (!Math.isNaN(memKB)) memoryMB = memKB / 1024.0;
+
+					var cpu = Std.parseFloat(filteredParts[1]);
+					if (!Math.isNaN(cpu)) cpuPercent = cpu;
+				}
+
+				// Get file handle count
+				try {
+					var lsofProc = new Process("sh", ["-c", 'lsof -p $pidStr 2>/dev/null | wc -l']);
+					var lsofOutput = StringTools.trim(lsofProc.stdout.readAll().toString());
+					lsofProc.close();
+					var handles = Std.parseInt(lsofOutput);
+					if (handles != null) fileHandles = handles - 1; // Subtract header line
+				} catch (e:Dynamic) {
+					fileHandles = 0;
+				}
+			} catch (e:Dynamic) {
+				trace("Failed to get system metrics: " + e);
+			}
+
+			// Calculate uptime
+			var uptime = Math.round(Timer.stamp() - startTime);
+
+			// Write to CSV (no rotation)
+			var metricsPath = appDir+"metrics.csv";
+			var timestamp = Date.now().toString();
+			var csvLine = '$timestamp,$uptime,$threadCount,$activeJobsCount,${Math.round(memoryMB*10)/10},$cpuPercent,$fileHandles\n';
+
+			var output = sys.io.File.append(metricsPath, false);
+			output.writeString(csvLine);
+			output.close();
+
+			// Also log to main log with warnings
+			var metrics = '[METRICS] uptime=${uptime}s threads=$threadCount jobs=$activeJobsCount mem=${Math.round(memoryMB)}MB cpu=$cpuPercent% files=$fileHandles';
+
+			if (threadCount > 20) {
+				writeToLog(metrics + " | WARNING: Thread count exceeds 20!", "WARN");
+			} else if (activeJobsCount > 10) {
+				writeToLog(metrics + " | WARNING: Active jobs exceed 10!", "WARN");
+			} else if (memoryMB > 100) {
+				writeToLog(metrics + " | WARNING: Memory usage exceeds 100MB!", "WARN");
+			} else if (cpuPercent > 80) {
+				writeToLog(metrics + " | WARNING: CPU usage exceeds 80%!", "WARN");
+			} else {
+				writeToLog(metrics, "INFO");
+			}
+		} catch (e:Dynamic) {
+			writeToLog("Failed to collect resource metrics: " + e, "ERROR");
+		}
 	}
 
 	static public function rebootLocalMachine()
@@ -661,7 +895,7 @@ class KontentumNC
 		req.send();
 	}	
 
-	static function onPingClientResponse(response:HttpResponse)
+	static function onPingClientResponse(response:HttpResponse2)
 	{
 		if (response!=null && response.isOK)
 		{
@@ -690,6 +924,32 @@ class KontentumNC
 */
 	/////////////////////////////////////////////////////////////////////////////////////
 
+	// Add a cleanup method and call it periodically
+	function cleanupResources():Void
+	{
+		if (debug)
+		{
+			trace("Performing periodic resource cleanup");
+		}
+		
+		// Force garbage collection
+		// #if cpp
+		// cpp.vm.Gc.run(true);
+		// #end
+		
+		// Recreate HTTP clients
+		httpPingRelayRequest = new HttpRequest2({
+			url: kontentumLink + restPingRelay + "/" + apiKey,
+			callback: onHttpResponse, 
+			callbackError: onHttpError,
+			async:httpAsync
+		});
+		httpPingRelayRequest.timeout = 1;//Std.int(Math.floor(pingTime-1.0));
+	}
+
+
+	/////////////////////////////////////////////////////////////////////////////////////
+
 }
 
 typedef PingResponse =
@@ -698,8 +958,20 @@ typedef PingResponse =
 	var all_clients		: Array<PingClient>;
 	var schedules		: Array<ScheduleItem>;
 	var ping			: Float;
+	var timestamp		: String;
 	var success			: Bool;
 	var callback		: String;
+	var url_jobs		: Array<UrlJob>;
+}
+
+typedef UrlJob =
+{
+	var body			: String; 
+	var reference		: String; 
+	var url				: String; 
+	var method			: String;
+	var header			: String;
+	var content_type	: String;
 }
 
 typedef PingClient =
@@ -886,12 +1158,12 @@ class Projector
 		
 	}
 	
-	static public function query(ip:String,?onQueryComplete:(on:Bool)->Void,?onQueryFailed:(err:String)->Void)
+	static public function query(ip:String,?onQueryComplete:(status:Int)->Void,?onQueryFailed:(err:String)->Void)
 	{
 		var p = new Process(pjLinkPath,[ip, ProjectorCommand.query]);
 		var response:String = "";
 
-		if  (KontentumNC.debug)
+		if (KontentumNC.debug)
 			trace('send query to projector : $ip');
 
 		while (response==null || response=="")
@@ -909,19 +1181,30 @@ class Projector
 		{
 			p.close();
 			response = response.split("%1").join("").toUpperCase();
-			if (response=="POWR=1")
+			if (response=="POWR=0")
 			{
 				if (onQueryComplete!=null)
-				{
-					onQueryComplete(true);
-				}
+					onQueryComplete(0);
 			}
-			else if (response=="POWR=0")
+			else if (response=="POWR=1")
 			{
 				if (onQueryComplete!=null)
-				{
-					onQueryComplete(false);
-				}
+					onQueryComplete(1);
+			}
+			else if (response=="POWR=2")
+			{
+				if (onQueryComplete!=null)
+					onQueryComplete(2);
+			}
+			else if (response=="POWR=3")
+			{
+				if (onQueryComplete!=null)
+					onQueryComplete(3);
+			}
+			else if (response=="POWR=4")
+			{
+				if (onQueryComplete!=null)
+					onQueryComplete(4);
 			}
 			else 
 				if (onQueryFailed!=null)
@@ -931,6 +1214,27 @@ class Projector
 				// trace("response : "+response);
 		}
 		
+	}
+
+	static public function sendKontentumCallback(pi:PingClient, state:Int)
+	{
+		var cbStr:String = StringTools.urlEncode('pjlink:${pi.id}')+'/'+StringTools.urlEncode('$state;${pi.ip}');
+
+		var projectorCallbackRequest = new HttpRequest2({url:KontentumNC.kontentumLink + KontentumNC.i.restRelayCallback+"/"+cbStr, callback: onProjectorCallbackResponse, callbackError:onProjectorCallbackError, async:KontentumNC.httpAsync});
+		projectorCallbackRequest.timeout = 1;//Std.int(MathUtils.clamp(KontentumNC.i.pingTime-1, 1, 30));
+		projectorCallbackRequest.method = "GET";
+		if (KontentumNC.debug) trace('Sending callback pjlink:${pi.id} ${projectorCallbackRequest.url} callback with data : $cbStr');
+		projectorCallbackRequest.send();
+	}
+
+	static function onProjectorCallbackResponse(response:HttpResponse2)
+	{
+		if (KontentumNC.debug) trace('Projector callback ok : ${response.request.url} : ${response.status} : ${response.content}');
+	}
+
+	static function onProjectorCallbackError(response:HttpResponse2)
+	{
+		if (KontentumNC.debug) trace('Projector callback error : ${response.request.url} : ${response.status} : ${response.content}');
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////

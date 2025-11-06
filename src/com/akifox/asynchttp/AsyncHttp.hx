@@ -152,7 +152,7 @@ class AsyncHttp {
    *
    * (default set to true on -debug)
    **/
-  public static var logEnabled:Bool = #if debug false #else false #end;
+  public static var logEnabled:Bool = #if debug true #else false #end;
   public static var logErrorEnabled:Bool = true;
 
   /**
@@ -224,14 +224,17 @@ class AsyncHttp {
 
 #if (neko || cpp || java)
 
+
+
       if (request.async) {
         // Asynchronous (with a new thread)
-        var worker = Thread.create(httpViaSocket_Threaded);
+        var worker = Thread.createWithEventLoop(httpViaSocket_Threaded);
         worker.sendMessage(request);
       } else {
         // Synchronous (same thread)
         httpViaSocket(request);
       }
+
 
 #elseif flash
 
@@ -269,16 +272,52 @@ class AsyncHttp {
   // ==========================================================================================
   // Multi-thread version for neko, CPP + JAVA
 
+    static var threads:Int = 0;
+
+    public static function getThreadCount():Int {
+      return threads;
+    }
+
     private function httpViaSocket_Threaded() {
+
+    var requestId = "req_" + Date.now().getTime();
+    ThreadKiller.registerRequest(requestId);
+
+    // Set a watchdog timer to kill hanging threads
+    var timeout = 30; // 30 seconds timeout
+    var watchdog = new haxe.Timer(timeout * 1000);
+    watchdog.run = function() {
+        // If this is still the active request after timeout
+        if (ThreadKiller.currentRequestId == requestId) {
+            trace('Request ${requestId} timed out after ${timeout} seconds, killing process');
+            ThreadKiller.killCurrentProcess();
+        }
+        watchdog.stop();
+    };
+
+    threads++;
+    var startTime = haxe.Timer.stamp();
+
+    log('[THREAD_START] id=$requestId count=$threads', requestId);
+
     var request:HttpRequest = null;
     try {
       request = Thread.readMessage(true);
+      log('[THREAD_EXEC] id=$requestId url=${request.url} method=${request.method} timeout=${request.timeout}', requestId);
       httpViaSocket(request);
-    } catch (error:String) {
+    } catch (err:String) {
       // very unlikely it will fall in this case
       // (just to be safe and don't let the sub thread crash the whole application)
-      callback(request, 0.0, request.url, new HttpHeaders(), 0, null, error);
+      error('[THREAD_ERROR] id=$requestId error=$err', requestId);
+      callback(request, 0.0, request.url, new HttpHeaders(), 0, null, err);
     }
+
+    threads--;
+    var duration = haxe.Timer.stamp() - startTime;
+    watchdog.stop(); // Stop the watchdog if we complete naturally
+    ThreadKiller.currentRequestId = null; // Clear the current request
+
+    log('[THREAD_COMPLETE] id=$requestId count=$threads duration=${Math.round(duration*1000)}ms', requestId);
   }
 
   // Open a socket, send a request and get the headers
@@ -290,14 +329,19 @@ class AsyncHttp {
     var status:Int = 0;
 
     var s:AbstractSocket;
+    var socketType = "";
     if (url.isSsl) {
       s = new SocketSSL();
+      socketType = "SSL";
 #if (!python && !neko && !java && !macro && !cpp && !lua && !php)
       error('Requested HTTPS but no SSL support (fallback on HTTP)', request.fingerprint);
 #end
     } else {
       s = new SocketTCP();
+      socketType = "TCP";
     }
+
+    log('[SOCKET_OPEN] type=$socketType host=${url.host}:${url.port}', request.fingerprint);
 
     // -- START REQUEST
 
@@ -312,8 +356,9 @@ class AsyncHttp {
       s.connect(new Host(url.host), url.port);
 #end
       connected = true;
+      log('[SOCKET_CONNECTED] host=${url.host}:${url.port}', request.fingerprint);
     } catch (msg:Dynamic) {
-      errorMessage = error('Request failed -> $msg', request.fingerprint);
+      errorMessage = error('[SOCKET_CONNECT_FAILED] $msg', request.fingerprint);
     }
 
     if (connected) {
@@ -578,7 +623,14 @@ class AsyncHttp {
     }
 
     if (s != null) {
-      if (connected) s.close();
+      try {
+        if (connected) {
+          s.close();
+          log('[SOCKET_CLOSED] host=${url.host}:${url.port}', request.fingerprint);
+        }
+      } catch (e:Dynamic) {
+        error('[SOCKET_CLOSE_FAILED] $e', request.fingerprint);
+      }
       s = null;
     }
 
@@ -827,3 +879,32 @@ class AsyncHttp {
   }
 
 }
+
+#if cpp
+
+class ThreadKiller {
+    // Track currently running threads
+    public static var currentRequestId:String = null;
+    
+    // Register the current HTTP request
+    public static function registerRequest(requestId:String):Void {
+        currentRequestId = requestId;
+        // Get the current process ID
+        var pid = Sys.systemName() == "Linux" ? Sys.command("echo $PPID") : 0;
+        trace('Started request: ${requestId} with process ID: ${pid}');
+    }
+    
+    // Kill the current process
+    public static function killCurrentProcess():Void {
+        if (Sys.systemName() == "Linux") {
+            // Force kill the current process
+            Sys.command("kill -9 $PPID");
+        } else {
+            Sys.exit(1);
+        }
+    }
+}
+
+
+
+#end
